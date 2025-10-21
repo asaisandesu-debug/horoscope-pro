@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Horoscope Pro v2 — Offline</title>
+<style>
+:root{--bg:#0b0d11;--card:#131826;--ink:#e9eef7;--muted:#9bb0c9;--ring:#2b3547;--accent:#66d9ef;--good:#7ae289;--bad:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",Roboto,Arial}
+header{position:sticky;top:0;background:rgba(11,13,17,.7);backdrop-filter:blur(6px);border-bottom:1px solid var(--ring)}
+.wrap{max-width:1240px;margin:0 auto;padding:14px}
+h1{margin:6px 0 2px;font-size:20px} .sub{color:var(--muted);font-size:12px}
+.grid{display:grid;gap:12px} @media(min-width:1100px){.grid{grid-template-columns:380px 1fr}}
+.card{background:var(--card);border:1px solid var(--ring);border-radius:12px;padding:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label{font-size:12px;color:var(--muted)} input,select,textarea,button{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--ring);background:#0f1525;color:var(--ink)}
+.kbd{font-family:ui-monospace,Menlo,Consolas,monospace;border:1px solid #2a364a;background:#0e1422;border-radius:6px;padding:2px 6px}
+.pill{display:inline-block;padding:4px 8px;border:1px solid var(--ring);border-radius:999px;font-size:11px;color:var(--muted)}
+.btn{cursor:pointer;background:#0f1628} .btn:hover{background:#132039} .btn-ac{background:linear-gradient(90deg,#0d2a36,#122b44);border-color:#1f4b63}
+.table{width:100%;border-collapse:collapse;font-size:12px} .table th,.table td{border-bottom:1px solid var(--ring);padding:6px 4px;text-align:left}
+.help{font-size:12px;color:var(--muted);line-height:1.6}
+.flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.right{margin-left:auto}
+canvas{width:100%;height:auto;background:#0b0f19;border-radius:12px;border:1px solid var(--ring)}
+hr.sep{border:0;border-top:1px solid var(--ring);margin:12px 0}
+.tabs{display:flex;gap:8px;margin:8px 0}
+.tabs button{flex:1}
+.bad{color:var(--bad)} .good{color:var(--good)}
+.small{font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Horoscope Pro <span class="pill">v2 Offline</span></h1>
+    <div class="sub">出生地ジオコーディング、ASC/MC自動計算、Whole/Equal、サビアン（主要ポイント）、AI風鑑定（恋愛・仕事・未来・相性・引越し・転職・適職）、PNG・保存対応。</div>
+  </div>
+</header>
+
+<main class="wrap grid">
+  <!-- Left -->
+  <section class="card">
+    <div class="tabs">
+      <button class="btn" id="tab1Btn">① 個人チャート</button>
+      <button class="btn" id="tab2Btn">② 相性（2人）</button>
+      <button class="btn" id="tab3Btn">設定/エクスポート</button>
+    </div>
+
+    <!-- Tab 1 -->
+    <div id="tab1">
+      <h3>個人チャート</h3>
+      <div class="row">
+        <div><label>氏名/ラベル</label><input id="nameA" placeholder="例：Client-A"></div>
+        <div><label>メモ</label><input id="noteA" placeholder="用途/相談内容など"></div>
+      </div>
+      <div class="row">
+        <div><label>生年月日</label><input id="dateA" type="date"></div>
+        <div><label>出生時刻（24h）</label><input id="timeA" type="time" step="60"></div>
+      </div>
+      <div class="row">
+        <div><label>出生地（地名検索）</label>
+          <div class="row" style="grid-template-columns:1fr auto">
+            <input id="placeA" placeholder="例：愛知県名古屋市">
+            <button class="btn" id="geoA">検索</button>
+          </div>
+        </div>
+        <div class="help">地名→緯度経度へ自動変換（オンライン時）。オフライン時は下で直接入力。</div>
+      </div>
+      <div class="row">
+        <div><label>緯度</label><input id="latA" type="number" step="0.0001" placeholder="35.1815"></div>
+        <div><label>経度</label><input id="lonA" type="number" step="0.0001" placeholder="136.9066"></div>
+      </div>
+      <div class="row">
+        <div><label>UTCオフセット（日本=9）</label><input id="tzA" type="number" step="0.25" value="9"></div>
+        <div><label>DST</label><select id="dstA"><option value="0">なし</option><option value="1">+1h</option></select></div>
+      </div>
+      <hr class="sep">
+      <h4>ハウス/表示</h4>
+      <div class="row">
+        <div><label>ハウス</label>
+          <select id="houseA"><option value="whole">Whole Sign</option><option value="equal">Equal</option><option value="placidus" disabled>Placidus(次)</option></select>
+        </div>
+        <div><label>アスペクトOrb（度）</label><input id="orbA" type="number" step="0.5" value="6"></div>
+      </div>
+      <div class="row">
+        <div><label>外周ラベル</label><select id="outerA"><option value="sign">サイン記号</option><option value="deg">度数目盛</option></select></div>
+        <div><label>拡大（%）</label><input id="scaleA" type="number" value="100"></div>
+      </div>
+
+      <hr class="sep">
+      <h4>天体位置（当面は手入力／後でAPI自動化）</h4>
+      <div class="help">例：<span class="kbd">23.5 天秤</span> / <span class="kbd">10♌︎</span> / <span class="kbd">210</span>（黄経度）。ASC/MCはボタンで自動計算。</div>
+      <table class="table" id="planetTableA"></table>
+
+      <div class="flex" style="margin-top:8px">
+        <button class="btn btn-ac" id="calcA">Asc/MC 計算</button>
+        <button class="btn" id="drawA">描画</button>
+        <button class="btn" id="genA">AI鑑定 生成</button>
+        <button class="btn" id="pngA">PNG</button>
+        <button class="btn" id="saveA">保存</button>
+        <button class="btn" id="loadA">読込</button>
+        <button class="btn" id="exportA">JSON出力</button>
+        <button class="btn" id="importA">JSON取込</button>
+        <button class="btn" id="clearA">全消去</button>
+      </div>
+      <details style="margin-top:8px"><summary>エフェメリスをAPI接続（任意/上級）</summary>
+        <div class="help">`EphemerisAdapter.compute(meta)` に外部計算を差し込むと自動取得します。（SwissEph等）</div>
+      </details>
+    </div>
+
+    <!-- Tab 2 -->
+    <div id="tab2" style="display:none">
+      <h3>相性（シナストリー）</h3>
+      <div class="help">AとBの主要天体（☉☽♀♂）中心に、0/60/90/120/180 のアスペクトを自動判定し、恋愛/仕事/協働の“噛み合い”を簡易スコア化します。</div>
+      <div class="row">
+        <div><label>相手（B）氏名</label><input id="nameB" placeholder="Client-B / Partner"></div>
+        <div></div>
+      </div>
+      <div class="row">
+        <div><label>生年月日</label><input id="dateB" type="date"></div>
+        <div><label>出生時刻</label><input id="timeB" type="time" step="60"></div>
+      </div>
+      <div class="row">
+        <div><label>出生地</label>
+          <div class="row" style="grid-template-columns:1fr auto">
+            <input id="placeB" placeholder="例：東京都渋谷区"><button class="btn" id="geoB">検索</button>
+          </div>
+        </div>
+        <div class="help">オンライン時に地名→緯度経度変換。オフライン時は下で直接。</div>
+      </div>
+      <div class="row">
+        <div><label>緯度</label><input id="latB" type="number" step="0.0001"></div>
+        <div><label>経度</label><input id="lonB" type="number" step="0.0001"></div>
+      </div>
+      <div class="row">
+        <div><label>TZ</label><input id="tzB" type="number" step="0.25" value="9"></div>
+        <div><label>DST</label><select id="dstB"><option value="0">なし</option><option value="1">+1h</option></select></div>
+      </div>
+      <h4>相手の天体位置</h4>
+      <table class="table" id="planetTableB"></table>
+
+      <div class="flex" style="margin-top:8px">
+        <button class="btn btn-ac" id="calcB">BのAsc/MC</button>
+        <button class="btn" id="synBtn">相性スコア</button>
+      </div>
+      <div id="synOut" class="help" style="margin-top:8px"></div>
+    </div>
+
+    <!-- Tab 3 -->
+    <div id="tab3" style="display:none">
+      <h3>設定 / エクスポート</h3>
+      <div class="help">テーマ色はダーク固定（鑑定現場向け）。サビアン辞書は軽量キーワードを同梱。ご自身の言い回しに差し替えるには下のJSON欄を使ってください。</div>
+      <label>サビアン辞書（JSON / sign[0-11]×degree[1-30] → keyword）</label>
+      <textarea id="sabianJSON" rows="10" placeholder='{"0":{"1":"夜明けの…"}}'></textarea>
+      <div class="flex" style="margin-top:8px">
+        <button class="btn" id="sabianLoad">差し替え読込</button>
+        <button class="btn" id="sabianDump">現在の辞書を出力</button>
+      </div>
+      <hr class="sep">
+      <h4>バックアップ</h4>
+      <div class="flex">
+        <button class="btn" id="dumpAll">全データをJSON保存</button>
+        <button class="btn" id="restoreAll">JSONから復元</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Right -->
+  <section class="card">
+    <div class="flex">
+      <h3 style="margin:0">チャート</h3>
+      <div class="right"><span class="pill">PNG</span><span class="pill">ローカル保存</span><span class="pill">サビアン</span></div>
+    </div>
+    <canvas id="cv" width="1000" height="1000"></canvas>
+
+    <h3 style="margin-top:14px">サマリー / アスペクト</h3>
+    <div id="aspBox" class="help"></div>
+
+    <h3 style="margin-top:14px">サビアン（主要4：☉☽ASC/MC）</h3>
+    <div id="sabBox" class="help"></div>
+
+    <h3 style="margin-top:14px">AI風 鑑定レポート</h3>
+    <textarea id="report" rows="14" placeholder="ここに自動生成の鑑定レポートが入ります（編集→そのままコピペ可）"></textarea>
+  </section>
+</main>
+
+<script>
+/* ===== Utilities/Consts ===== */
+const DEG=Math.PI/180;function mod360(x){x%=360;if(x<0)x+=360;return x}
+const SIGNS=["牡羊","牡牛","双子","蟹","獅子","乙女","天秤","蠍","射手","山羊","水瓶","魚"];
+const GLYPH=["\u2648","\u2649","\u264A","\u264B","\u264C","\u264D","\u264E","\u264F","\u2650","\u2651","\u2652","\u2653"];
+const PLANETS=[["Sun","太陽","\u2609"],["Moon","月","\u263D"],["Mercury","水星","\u263F"],["Venus","金星","\u2640"],["Mars","火星","\u2642"],["Jupiter","木星","\u2643"],["Saturn","土星","\u2644"],["Uranus","天王星","\u2645"],["Neptune","海王星","\u2646"],["Pluto","冥王星","\u2647"],["ASC","ASC","ASC"],["MC","MC","MC"]];
+const CORE=["Sun","Moon","Venus","Mars","ASC","MC"];
+
+/* ===== Parsing degrees ===== */
+function dmsToDeg(s){
+  if(!s)return null; s=s.trim();
+  if(/^[-+]?\d+(\.\d+)?$/.test(s)) return mod360(parseFloat(s));
+  const m=s.match(/^([0-9]+(\.[0-9]+)?)\s*([^\d\s]+)$/); // "23.5 天秤" / "10♌︎"
+  const signMap={"♈︎":0,"♈":0,"♉︎":1,"♉":1,"♊︎":2,"♊":2,"♋︎":3,"♋":3,"♌︎":4,"♌":4,"♍︎":5,"♍":5,"♎︎":6,"♎":6,"♏︎":7,"♏":7,"♐︎":8,"♐":8,"♑︎":9,"♑":9,"♒︎":10,"♒":10,"♓︎":11,"♓":11};
+  const signKanji={"牡羊":0,"牡牛":1,"双子":2,"蟹":3,"獅子":4,"乙女":5,"天秤":6,"蠍":7,"射手":8,"山羊":9,"水瓶":10,"魚":11};
+  if(m){
+    const deg=parseFloat(m[1]); let idx=signMap[m[3]]; if(idx==null && signKanji[m[3]]!=null) idx=signKanji[m[3]];
+    if(idx==null) return null; return mod360(idx*30+deg);
+  }
+  return null;
+}
+function degToSignText(d){d=mod360(d);const s=Math.floor(d/30),a=d-s*30;return `${SIGNS[s]} ${a.toFixed(2)}°`;}
+
+/* ===== Time/ASC/MC ===== */
+function jdFromYMD(y,m,dd,hh=0,mi=0){if(m<=2){y-=1;m+=12}const A=Math.floor(y/100),B=2-A+Math.floor(A/4),day=dd+(hh+mi/60)/24;return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+day+B-1524.5;}
+function gstDeg(jd){const T=(jd-2451545.0)/36525;let th=280.46061837+360.98564736629*(jd-2451545.0)+0.000387933*T*T-(T*T*T)/38710000;return mod360(th);}
+function obliqDeg(jd){const T=(jd-2451545.0)/36525;return 23+26/60+21.448/3600-(46.8150*T+0.00059*T*T-0.001813*T*T*T)/3600;}
+function ascMcFrom(jd,latDeg,lonDeg){
+  const eps=obliqDeg(jd)*DEG,g=gstDeg(jd)*DEG,lst=g+lonDeg*DEG,phi=latDeg*DEG;
+  let Lmc=Math.atan2(Math.sin(lst)*Math.cos(eps),Math.cos(lst)); Lmc=mod360(Lmc/DEG);
+  const sinE=Math.sin(eps),cosE=Math.cos(eps),tanPhi=Math.tan(phi),sinL=Math.sin(lst),cosL=Math.cos(lst);
+  let Lasc=Math.atan2(-cosL, sinL*cosE - tanPhi*sinE); Lasc=mod360(Lasc/DEG);
+  return {ASC:Lasc,MC:Lmc};
+}
+
+/* ===== Houses ===== */
+const HouseSystems={whole(asc){const s=Math.floor(asc/30);return[...Array(12)].map((_,i)=>mod360((s+i)*30))}, equal(asc){return[...Array(12)].map((_,i)=>mod360(asc+i*30))}};
+
+/* ===== Ephemeris Adapter (plug-in for auto positions) ===== */
+const EphemerisAdapter={
+  // 例: 外部APIに metaA を送信して {Sun:xxx,...} を返すようにする
+  async compute(meta){ return null; } // 今は未実装（手入力を使用）
+};
+
+/* ===== Sabian (lightweight keyword dict; editable) ===== */
+let SABIAN = (()=>{ // sign 0-11 -> degree 1-30 -> keyword（超要約：公開要約風の自作短語）
+  const base={};
+  const k=(s,d,t)=>{base[s]??={};base[s][d]=t};
+  const words=[
+    // 牡羊1-30
+    ["始動","資質の覚醒","初学の対話","根源へ戻る","原風景","衝動の舵","自己点火","先導","粗削りの勇","直球","自己宣言","先駆者","火入れ","突破口","荒削りの魅力","居場所探し","無鉄砲","純度の維持","短期決戦","単独行","点火保持","見切り発車","速度超過","勝負勘","奮起","再起","単純化","単発集中","突破の代償","独立採算"],
+    // 牡牛
+    ["感覚へ降りる","所有の安心","五感の練磨","地味な継続","手触り","価値の固定","土台づくり","素朴さ","粘り","堅実投資","蓄え","職人気質","美意識","習慣の力","現実味","食と体","コスパ","安定志向","マイペース","所有の試練","守りの強化","生活の芸術","素材主義","満ちる","味わう","保守と更新","地に足","信用構築","自給","完成度"],
+    // 双子
+    ["情報収集","軽やかな交換","言葉遊び","二面性の活用","橋渡し","好奇心","多芸多才","フットワーク","模倣と編集","即応力","散漫と集中","ハブ化","短距離","ニュース性","伝書","即時判断","閃き","話術","マルチタスク","風の友","機転","器用貧乏","交差点","共有","比べる","試行錯誤","軽装","速報","切替","通信路"],
+    // 蟹
+    ["守る","居場所づくり","家族性","共感","内輪の絆","情の記憶","防衛線","保護本能","庇護と教育","巣作り","受容","ホーム","母性","仲間内の秩序","情緒の潮","回想","引きこもりと外出","面倒見","支え合い","境界線","安心と甘え","世話焼き","ナイーブ","殻と芯","情の熟成","面影","内政","横のつながり","情の決壊","巣立ち"],
+    // 獅子
+    ["自己表現","舞台へ","誇り","演出","中心に立つ","讃えられる喜び","太陽の心","創作","スポットライト","祝祭","称号","王道","ドラマ性","リーダー性","勇姿","自己肯定","遊び心","拍手","晴れ舞台","自己過信","遊芸","情熱管理","見せる技術","気前の良さ","名乗り","主役交代","余裕","遊びの王道","歓喜","黄金期"],
+    // 乙女
+    ["整える","微調整","実務力","分解能","衛生観","改善","段取り","点検","現場主義","小さな最適化","習慣化","校正","秩序","素朴な善","誠実","品質","仕分け","最小コスト","批評","調整役","気配り","健康管理","できることから","職務倫理","点をつなぐ","奉仕","仕様書","更正","日々の鍛錬","最後の仕上げ"],
+    // 天秤
+    ["対等","バランス","礼節","契約","見た目の整え","引き立て役","社交術","合意形成","デザイン感覚","公正","相談役","ペアリング","距離感","鏡像","評判","紹介","化粧","パートナー契約","合意の試練","公平の難しさ","社交の疲弊","表面張力","場の空気","魅せ方","分配","均衡回復","交渉術","橋渡しⅡ","場作り","洗練"],
+    // 蠍
+    ["深掘り","秘密の共有","結束","代償の覚悟","濃密化","一心同体","影の力","心理戦","変容の渦","極限耐性","混ざり合う","破壊と再生","取引の裏","絆の契約","所有と明け渡し","独占","執着","背水の陣","手放し試験","蘇生","禁断の扉","一点集中","深読み","遺伝と継承","潜航","逆転劇","黒幕","最奥","生まれ変わり","核融合"],
+    // 射手
+    ["遠くを見る","自由へ","高みの目標","旅立ち","宗教/哲学","学術","越境","拡大","狩りと収穫","高揚","冒険","信念","異文化","楽観","理想","直観の弓","宣言と布教","ラッキー","誇張","暴走注意","教える","海外運","志の共有","法と倫理","スポーツ精神","コーチング","寛大さ","伸び代","巡幸","大団円"],
+    // 山羊
+    ["社会の壁","肩書と責務","目標管理","階段を上る","時間の味方","常識","統治","実績","役割意識","地位","権威","規範","長期戦","冷静さ","持久","構造化","背骨","節制","損益計算","社会の父","硬派","冬の厳しさ","策と忍耐","信用積立","守破離","責任の報酬","頂上手前","成果主義","越年","完成・継承"],
+    // 水瓶
+    ["アップデート","既存打破","自由主義","友愛","ネットワーク","実験","未来志向","越境連帯","水平展開","共創","改革","独自規格","非同調","離脱と再接続","匿名性","テック","発想の飛躍","発明","マイナー連合","俯瞰","アルゴリズム","変人力","集合知","シェア文化","反権威","ハック","中立","風通し","刷新","電撃"],
+    // 魚
+    ["境界の融解","共感の海","夢の回路","奉仕と祈り","芸術療法","慈悲","混沌の受容","無条件の愛","浄化","スピリット","予感","沈潜","献身","余白","憐憫","浄解","漂流","共鳴","内なる海","静かな終幕","やさしさの試練","手放し","許し","癒し","眠りと目覚め","見えない縁","合一","巡礼","涙の洗礼","輪廻"]
+  ];
+  for(let s=0;s<12;s++){for(let d=1;d<=30;d++){k(s,d,words[s][d-1])}}
+  return base;
+})();
+
+/* ===== Numerology (Personal Year / Month) ===== */
+function sumDigits(n){return n.toString().split("").reduce((a,b)=>a+parseInt(b||0),0)}
+function reduce1to9(n){while(n>9){n=sumDigits(n)}return n}
+function personalYear(birthY,birthM,birthD,year){return reduce1to9(sumDigits(birthM)+sumDigits(birthD)+sumDigits(year))}
+function personalMonth(py,month){return reduce1to9(py+month)}
+
+/* ===== Build planet tables ===== */
+const KEYS=["Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto","ASC","MC"];
+function buildTable(elId){
+  const el=document.getElementById(elId);
+  el.innerHTML=`<tr><th>天体</th><th>位置（度 or「度 サイン」）</th><th>備考</th></tr>`+
+  KEYS.map(k=>{
+    const p=PLANETS.find(x=>x[0]===k);
+    return `<tr><td><span style="font-size:16px">${p[2]}</span> ${p[1]}</td>
+    <td><input data-pl="${k}" placeholder="例：23.5 天秤 / 210"></td>
+    <td class="small">${(k==="ASC"||k==="MC")?"Asc/MCはボタンで":"—"}</td></tr>`;
+  }).join("");
+}
+buildTable("planetTableA"); buildTable("planetTableB");
+
+/* ===== Read/Fill positions ===== */
+function readPos(tableId){const pos={}; document.querySelectorAll(`#${tableId} [data-pl]`).forEach(inp=>{const k=inp.getAttribute("data-pl");const v=dmsToDeg(inp.value); if(v!=null) pos[k]=v;}); return pos;}
+function fillPos(tableId,map){document.querySelectorAll(`#${tableId} [data-pl]`).forEach(inp=>{const k=inp.getAttribute("data-pl"); if(map[k]!=null) inp.value=degToSignText(map[k])})}
+
+/* ===== Aspects ===== */
+const ASP=[["Conj",0,8],["Sext",60,5],["Square",90,6],["Trine",120,7],["Opp",180,8]];
+function dAng(a,b){let d=Math.abs(a-b)%360;if(d>180)d=360-d;return d}
+function findAspects(pos,orb){const keys=Object.keys(pos).filter(k=>!["ASC","MC"].includes(k)); const out=[];
+  for(let i=0;i<keys.length;i++){for(let j=i+1;j<keys.length;j++){
+    const A=pos[keys[i]],B=pos[keys[j]];
+    ASP.forEach(s=>{ if(Math.abs(dAng(A,B)-s[1])<= (orb??s[2])) out.push({p1:keys[i],p2:keys[j],type:s[0],delta:(dAng(A,B)-s[1]).toFixed(2)}) })
+  }} return out;
+}
+
+/* ===== Drawing ===== */
+function drawChart(canvas, pos, houses, opt={}){
+  const ctx=canvas.getContext('2d'); const W=canvas.width,H=canvas.height; ctx.clearRect(0,0,W,H);
+  const s=(opt.scale??100)/100; const R=Math.min(W,H)*0.45*s; const cx=W/2,cy=H/2;
+  // outer ring
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.strokeStyle='#2c374a'; ctx.lineWidth=2; ctx.stroke();
+  // zodiac sectors
+  for(let i=0;i<12;i++){
+    const start=(i*30)*DEG - Math.PI/2;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,R,start,start+30*DEG); ctx.strokeStyle='#233046'; ctx.lineWidth=1; ctx.stroke();
+    const mid=start+15*DEG, rx=cx+(R-22)*Math.cos(mid), ry=cy+(R-22)*Math.sin(mid);
+    ctx.fillStyle='#c7d6f1'; ctx.font='16px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(opt.outer==='deg'? `${i*30}°` : GLYPH[i], rx, ry);
+  }
+  // houses
+  if(houses){ for(let i=0;i<12;i++){ const ang=houses[i]*DEG - Math.PI/2, x=cx+R*Math.cos(ang), y=cy+R*Math.sin(ang);
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.strokeStyle = i===0? '#66d9ef' : '#354158'; ctx.lineWidth=i===0?2.5:1; ctx.stroke();
+      const rx=cx+(R-44)*Math.cos(ang), ry=cy+(R-44)*Math.sin(ang); ctx.fillStyle=i===0?'#66d9ef':'#7e8aa3'; ctx.font='12px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText((i+1),rx,ry);
+  } }
+  // planets
+  Object.keys(pos).forEach(k=>{
+    const ang=pos[k]*DEG - Math.PI/2, r=R-70, x=cx+r*Math.cos(ang), y=cy+r*Math.sin(ang);
+    ctx.beginPath(); ctx.arc(x,y,10,0,Math.PI*2); ctx.fillStyle='#142033'; ctx.fill(); ctx.lineWidth=2; ctx.strokeStyle='#5b88ff'; ctx.stroke();
+    const p=PLANETS.find(p=>p[0]===k); ctx.fillStyle='#e8eef8'; ctx.font='16px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p?p[2]:k,x,y);
+    ctx.fillStyle='#9fb0c8'; ctx.font='11px system-ui'; ctx.fillText(degToSignText(pos[k]), x, y+16);
+  });
+}
+
+/* ===== GeoCoding (online時のみ) ===== */
+async function geocode(q){ try{
+  const url=`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`;
+  const r=await fetch(url,{headers:{'Accept-Language':'ja'}}); const js=await r.json(); if(js?.length){return {lat:parseFloat(js[0].lat),lon:parseFloat(js[0].lon)}}
+  return null;
+}catch(e){return null}}
+
+/* ===== Collect/Fill meta ===== */
+function collectMeta(prefix){
+  return {
+    name:val(`#name${prefix}`), note:val(`#note${prefix}`),
+    date:val(`#date${prefix}`), time:val(`#time${prefix}`),
+    tz:parseFloat(val(`#tz${prefix}`)||0), dst:parseFloat(val(`#dst${prefix}`)||0),
+    lat:parseFloat(val(`#lat${prefix}`)||0), lon:parseFloat(val(`#lon${prefix}`)||0),
+    house:val(`#house${prefix}`)||'whole', orb:parseFloat(val(`#orb${prefix}`)||6),
+    outer:val(`#outer${prefix}`)||'sign', scale:parseFloat(val(`#scale${prefix}`)||100)
+  }
+}
+function val(sel){const e=document.querySelector(sel); return e?e.value:""}
+function setVal(sel,v){const e=document.querySelector(sel); if(e) e.value=v}
+
+/* ===== ASC/MC compute from inputs ===== */
+function computeAsc(prefix){
+  const m=collectMeta(prefix); if(!m.date){alert('日付を入れてください'); return}
+  const [y,mo,d]=m.date.split('-').map(Number); const [hh,mi]=(m.time||"00:00").split(':').map(Number);
+  const utcH=hh-m.tz-m.dst; const jd=jdFromYMD(y,mo,d,utcH,mi); const {ASC,MC}=ascMcFrom(jd,m.lat,m.lon);
+  const map={ASC,MC}; fillPos(`planetTable${prefix}`, map); alert('Asc/MCを反映しました');
+}
+
+/* ===== Houses by system ===== */
+function buildHouses(asc, sys){ if(asc==null) return null; return sys==='equal'? HouseSystems.equal(asc) : HouseSystems.whole(asc) }
+
+/* ===== Sabian helpers ===== */
+function sabianText(deg){deg=mod360(deg); const s=Math.floor(deg/30), d=Math.floor((deg - s*30))+1; const key=SABIAN?.[s]?.[d] || "（要約未設定：自由メモ可）"; return `${SIGNS[s]} ${d}度：${key}`;}
+function sabian4(pos){const o=[]; if(pos.Sun!=null)o.push(["太陽",sabianText(pos.Sun)]); if(pos.Moon!=null)o.push(["月",sabianText(pos.Moon)]); if(pos.ASC!=null)o.push(["ASC",sabianText(pos.ASC)]); if(pos.MC!=null)o.push(["MC",sabianText(pos.MC)]); return o}
+
+/* ===== AI-like reading (rule-based) ===== */
+function elementOf(deg){const s=Math.floor(mod360(deg)/30); return [0,4,8].includes(s)?"火": [1,5,9].includes(s)?"地": [2,6,10].includes(s)?"風":"水"}
+function modalityOf(deg){const s=Math.floor(mod360(deg)/30); return [0,3,6,9].includes(s)?"活動":[1,4,7,10].includes(s)?"不動":"柔軟"}
+
+function aiReading(meta,pos){
+  // 数秘: パーソナルイヤー/マンス（今〜12ヶ月）
+  const now=new Date(); const [y,mo,d]=meta.date?meta.date.split('-').map(Number):[now.getFullYear(),now.getMonth()+1,now.getDate()];
+  const py=personalYear(y,mo,d, now.getFullYear()); const months=[...Array(12)].map((_,i)=>({m:i+1, pm:personalMonth(py,i+1)}));
+  const pmTips=(pm)=> pm===1?"始動・引越/転職◎": pm===5?"変化・移動◎": pm===9?"手放し／完了◎": "通常運";
+  const whenMove=months.filter(x=>[1,5].includes(x.pm)).map(x=>`${x.m}月`).join("・")||"—";
+  const whenCareer=months.filter(x=>[1,5].includes(x.pm)).map(x=>`${x.m}月`).join("・")||"—";
+
+  // エレメント/モダリティ傾向
+  const elems={火:0,地:0,風:0,水:0}; const mods={活動:0,不動:0,柔軟:0};
+  ["Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn"].forEach(k=>{
+    if(pos[k]!=null){ elems[elementOf(pos[k])]++; mods[modalityOf(pos[k])]++; }
+  });
+  const elemTop=Object.entries(elems).sort((a,b)=>b[1]-a[1])[0][0];
+  const modTop=Object.entries(mods).sort((a,b)=>b[1]-a[1])[0][0];
+
+  // 恋愛：♀♂/☉☽エレメント調和
+  let love="";
+  if(pos.Venus!=null && pos.Mars!=null){
+    const eV=elementOf(pos.Venus), eM=elementOf(pos.Mars);
+    love += `恋愛：金星が「${eV}」、火星が「${eM}」。`;
+    love += (eV===eM? "情熱と好みが一致しやすい。":"好みと動きにズレ。率直な共有で調整を。");
+  }else love+="恋愛：主要天体の入力で精度UP。";
+
+  // 仕事：MC/土星/木星
+  let work=""; if(pos.MC!=null){work+=`仕事：MCは${degToSignText(pos.MC)}。`} 
+  if(pos.Saturn!=null) work+=`土星は${elementOf(pos.Saturn)}要素を要求（基準/長期計画）。`;
+  if(pos.Jupiter!=null) work+=`木星は${elementOf(pos.Jupiter)}で拡大余地。`;
+  work+=` 全体傾向は「${elemTop}」×「${modTop}」。`;
+
+  // 適職：エレメント×モダリティでざっくり
+  const jobMap={
+    "火活動":"起業・営業・エンタメ","火不動":"クリエイティブ製造","火柔軟":"イベント・教育・広報",
+    "地活動":"経営管理・不動産・施工","地不動":"職人・会計・品質","地柔軟":"医療/介護・事務最適化",
+    "風活動":"企画・IT・メディア","風不動":"リサーチ・設計","風柔軟":"接客・通訳・編集",
+    "水活動":"セラピー・福祉起業","水不動":"研究・心理・芸術","水柔軟":"看護・カウンセリング・奉仕"
+  };
+  const jobKey=elemTop+modTop; const apt=jobMap[jobKey]||"汎用職";
+  // 転職/引越し時期：数秘PM 1/5を推奨、9は手放し
+  let timing=`引越し好機：${whenMove}／ 転職好機：${whenCareer}。 9の月は整理と完了に充てると◎。`;
+
+  // 未来：今年の学び（木星/土星エレメント＋PY）
+  const future=`今年(PY${py})のテーマ：${py===1?"始動/新章":py===2?"協調/土台":py===3?"発信/学び":py===4?"基礎固め":py===5?"変化/移動":py===6?"責任/家庭":py===7?"内省/研究":py===8?"成果/収穫": "手放し/終結"}。`;
+
+  return {love,work,apt,timing,future};
+}
+
+/* ===== Synastry (A vs B) ===== */
+function synastry(posA,posB,orb=6){
+  const pairs=[["Sun","Moon"],["Sun","Venus"],["Sun","Mars"],["Moon","Venus"],["Moon","Mars"],["Venus","Mars"]];
+  const res=[]; let score=0;
+  pairs.forEach(pp=>{
+    const A=posA[pp[0]], B=posB[pp[1]]; if(A==null||B==null) return;
+    const d=dAng(A,B);
+    if(Math.abs(d-0)<=orb||Math.abs(d-120)<=orb) {res.push(`${pp[0]}×${pp[1]}：良好（d≈${d.toFixed(1)}）`); score+=2;}
+    else if(Math.abs(d-60)<=orb){res.push(`${pp[0]}×${pp[1]}：調和（d≈${d.toFixed(1)}）`); score+=1.5;}
+    else if(Math.abs(d-180)<=orb||Math.abs(d-90)<=orb){res.push(`${pp[0]}×${pp[1]}：要調整（d≈${d.toFixed(1)}）`); score+=0.5;}
+  });
+  const label = score>=6?"相性：かなり良い": score>=4?"相性：良い": score>=2?"相性：ふつう":"相性：要工夫";
+  return {label,lines:res,score};
+}
+
+/* ===== Storage / Export ===== */
+function saveLocal(key,data){localStorage.setItem(key,JSON.stringify(data))}
+function loadLocal(key){try{return JSON.parse(localStorage.getItem(key)||"null")}catch(e){return null}}
+function toPNG(){const a=document.createElement('a');a.href=document.getElementById('cv').toDataURL('image/png');a.download=(val('#nameA')||'chart')+'.png';a.click();}
+
+/* ===== UI glue ===== */
+function housesFromMetaPos(meta,pos){return buildHouses(pos.ASC, meta.house)}
+function drawAll(meta,pos){
+  const houses=housesFromMetaPos(meta,pos);
+  drawChart(document.getElementById('cv'), pos, houses, {outer:meta.outer, scale:meta.scale});
+  const asp=findAspects(pos, meta.orb);
+  document.getElementById('aspBox').innerHTML = asp.length? asp.map(a=>`・<b>${a.p1}</b>×<b>${a.p2}</b> ${a.type} <span class="small">(Δ${a.delta}°)</span>`).join("<br>") : '（アスペクトなし）';
+  const sab=sabian4(pos); document.getElementById('sabBox').innerHTML = sab.length? sab.map(x=>`・<b>${x[0]}</b>：${x[1]}`).join("<br>") : '（主要ポイント未入力）';
+}
+
+/* ===== Report build ===== */
+function buildReport(meta,pos){
+  const r=aiReading(meta,pos);
+  const lines=[];
+  lines.push(`▶ クライアント：${meta.name||""}（${meta.date||""} ${meta.time||""} / TZ${meta.tz||0} / 緯度${meta.lat||""} 経度${meta.lon||""}）`);
+  lines.push(`▶ ハウス：${meta.house.toUpperCase()}　Orb±${meta.orb}°`);
+  Object.keys(pos).forEach(k=>lines.push(`${k.padEnd(7)}：${degToSignText(pos[k])}`));
+  lines.push(`— サビアン（☉☽ASC/MC）—`);
+  sabian4(pos).forEach(x=>lines.push(`${x[0]}：${x[1]}`));
+  lines.push("");
+  lines.push(`【恋愛】${r.love}`);
+  lines.push(`【仕事】${r.work}`);
+  lines.push(`【適職】${r.apt}`);
+  lines.push(`【転職/引越し】${r.timing}`);
+  lines.push(`【未来】${r.future}`);
+  lines.push("");
+  lines.push("※ 本レポートは自動生成の“たたき台”。現場では文言を整えてご活用ください。");
+  document.getElementById('report').value=lines.join("\n");
+}
+
+/* ===== Events ===== */
+function $(s){return document.querySelector(s)}
+$("#calcA").onclick=()=>computeAsc("A");
+$("#drawA").onclick=()=>{const m=collectMeta("A"); const p=readPos("planetTableA"); drawAll(m,p);}
+$("#genA").onclick=()=>{const m=collectMeta("A"); const p=readPos("planetTableA"); drawAll(m,p); buildReport(m,p);}
+$("#pngA").onclick=toPNG;
+$("#saveA").onclick=()=>{const m=collectMeta("A"), p=readPos("planetTableA"); saveLocal("chartA",{meta:m,positions:p}); alert("保存しました");}
+$("#loadA").onclick=()=>{const d=loadLocal("chartA"); if(!d){alert("保存なし");return} setVal("#nameA",d.meta.name||""); setVal("#noteA",d.meta.note||""); setVal("#dateA",d.meta.date||""); setVal("#timeA",d.meta.time||"");
+  setVal("#tzA",d.meta.tz??""); setVal("#dstA",d.meta.dst??0); setVal("#latA",d.meta.lat??""); setVal("#lonA",d.meta.lon??""); setVal("#houseA",d.meta.house||"whole"); setVal("#orbA",d.meta.orb??6); setVal("#outerA",d.meta.outer||"sign"); setVal("#scaleA",d.meta.scale??100);
+  fillPos("planetTableA", d.positions||{}); drawAll(d.meta, d.positions||{}); };
+$("#exportA").onclick=()=>{const d={meta:collectMeta("A"),positions:readPos("planetTableA")}; const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'}); const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download=(val('#nameA')||'chartA')+'.json'; a.click(); URL.revokeObjectURL(u);}
+$("#importA").onclick=()=>{const i=document.createElement('input'); i.type='file'; i.accept='.json,application/json'; i.onchange=e=>{const f=e.target.files[0]; const r=new FileReader(); r.onload=()=>{try{const d=JSON.parse(r.result); setVal("#nameA",d.meta?.name||""); setVal("#noteA",d.meta?.note||""); setVal("#dateA",d.meta?.date||""); setVal("#timeA",d.meta?.time||"");
+  setVal("#tzA",d.meta?.tz??""); setVal("#dstA",d.meta?.dst??0); setVal("#latA",d.meta?.lat??""); setVal("#lonA",d.meta?.lon??""); setVal("#houseA",d.meta?.house||"whole"); setVal("#orbA",d.meta?.orb??6); setVal("#outerA",d.meta?.outer||"sign"); setVal("#scaleA",d.meta?.scale??100);
+  fillPos("planetTableA", d.positions||{}); drawAll(d.meta,d.positions||{});}catch(e){alert("JSONエラー")}}; r.readAsText(f)}; i.click();}
+$("#clearA").onclick=()=>{if(!confirm("全消去しますか？"))return; document.querySelectorAll("input,textarea").forEach(x=>{if(x.id!=='dateA'&&x.id!=='timeA')x.value=""}); buildTable("planetTableA"); buildTable("planetTableB"); $("#aspBox").innerHTML=""; $("#sabBox").innerHTML=""; $("#report").value="";}
+
+$("#geoA").onclick=async()=>{const q=val("#placeA"); if(!q) return; const g=await geocode(q); if(!g){alert("検索できませんでした"); return} setVal("#latA",g.lat); setVal("#lonA",g.lon); alert("緯度経度を反映しました");}
+$("#geoB").onclick=async()=>{const q=val("#placeB"); if(!q) return; const g=await geocode(q); if(!g){alert("検索できませんでした"); return} setVal("#latB",g.lat); setVal("#lonB",g.lon); alert("緯度経度を反映しました");}
+
+$("#calcB").onclick=()=>computeAsc("B");
+$("#synBtn").onclick=()=>{const pA=readPos("planetTableA"), pB=readPos("planetTableB"); const syn=synastry(pA,pB, parseFloat(val('#orbA')||6)); $("#synOut").innerHTML=`<b>${syn.label}</b><br>` + (syn.lines.length?syn.lines.join("<br>"):"（主要天体を入力してください）");}
+
+/* Tabs */
+$("#tab1Btn").onclick=()=>{$("#tab1").style.display="block"; $("#tab2").style.display="none"; $("#tab3").style.display="none";}
+$("#tab2Btn").onclick=()=>{$("#tab1").style.display="none"; $("#tab2").style.display="block"; $("#tab3").style.display="none";}
+$("#tab3Btn").onclick=()=>{$("#tab1").style.display="none"; $("#tab2").style.display="none"; $("#tab3").style.display="block";}
+
+/* Sabian JSON in/out */
+$("#sabianDump").onclick=()=>{$("#sabianJSON").value=JSON.stringify(SABIAN,null,2)}
+$("#sabianLoad").onclick=()=>{try{const js=JSON.parse($("#sabianJSON").value||"{}"); SABIAN=js; alert("サビアン辞書を差し替えました")}catch(e){alert("JSON形式エラー")}}
+$("#dumpAll").onclick=()=>{const full={chartA:loadLocal("chartA"), sabian:SABIAN}; const blob=new Blob([JSON.stringify(full,null,2)],{type:'application/json'}); const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download='horoscope_backup.json'; a.click(); URL.revokeObjectURL(u)}
+$("#restoreAll").onclick=()=>{const i=document.createElement('input'); i.type='file'; i.accept='.json,application/json'; i.onchange=e=>{const f=e.target.files[0]; const r=new FileReader(); r.onload=()=>{try{const d=JSON.parse(r.result); if(d.chartA){saveLocal("chartA",d.chartA)} if(d.sabian){SABIAN=d.sabian} alert("復元しました")}catch(e){alert("JSONエラー")}}; r.readAsText(f)}; i.click()}
+
+/* Double click canvas to redraw */
+document.getElementById('cv').addEventListener('click', ()=>{$("#drawA").click()});
+</script>
+</body>
+</html> 
