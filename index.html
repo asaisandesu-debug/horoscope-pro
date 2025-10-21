@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Horoscope PRO – Dark Gold (Placidus Safe)</title>
+<title>Horoscope PRO – Dark Gold (Stable Placidus)</title>
 <style>
 :root{
   --bg:#0d1116; --card:#121921; --ink:#f6f6f6; --muted:#b9c4d1; --line:#243142;
@@ -39,14 +39,13 @@ canvas{width:100%;height:auto;background:#0e1514;border:1px solid var(--line);bo
 .section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:14px}
 .kv{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .tag{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted);margin:2px 4px 0 0}
-.err{border-color:#ff6b6b}
 h3,h4,th{color:var(--gold)}
 </style>
 </head>
 <body>
 <header>
   <div class="container">
-    <h1>Horoscope PRO – Dark Gold (Placidus / Safe Fallback)</h1>
+    <h1>Horoscope PRO – Dark Gold（Placidus 安定版）</h1>
     <div class="small">3区分/4区分/天体表/ハウス・カスプ/アスペクト格子＋一覧（orb）/AI総評（恋愛・仕事・未来計画・相性・引越・転職・適職＋長所短所）</div>
   </div>
 </header>
@@ -59,7 +58,7 @@ h3,h4,th{color:var(--gold)}
       <div>
         <label>出生地（地名→緯度経度）</label>
         <div class="flex"><input id="place" placeholder="例：名古屋市"><button id="geo" class="btn">地名検索</button></div>
-        <div class="help">ヒットしづらい時は市区町村まで入力。※検索不要：緯度経度を直接入れてもOK</div>
+        <div class="help">※地名検索が失敗しても、緯度・経度を手入力すれば動作します。</div>
       </div>
     </div>
 
@@ -67,12 +66,12 @@ h3,h4,th{color:var(--gold)}
       <div>
         <label>生年月日（連番）</label>
         <input id="dateCompact" placeholder="1989531 または 19890531">
-        <div class="help">7桁：YYYYMDD（1989531=1989/5/31）/ 8桁：YYYYMMDD（19890531）</div>
+        <div class="help">7桁：YYYYMDD（1989531=1989/5/31）/ 8桁：YYYYMMDD</div>
       </div>
       <div>
         <label>出生時刻（連番・任意）</label>
         <input id="timeCompact" placeholder="例：1200（=12:00）">
-        <div class="help">4桁：HHMM（0735/1820 等）※ 12:00 / 12時00分 / 12-00 / 12 もOK</div>
+        <div class="help">4桁：HHMM（0735/1820 等）※ 空欄でも可（=12:00）</div>
       </div>
     </div>
 
@@ -89,7 +88,7 @@ h3,h4,th{color:var(--gold)}
     <div class="row">
       <div><label>ハウス方式</label>
         <select id="house">
-          <option value="placidus" selected>Placidus（安全フォールバック有）</option>
+          <option value="placidus" selected>Placidus（失敗時はEqualに自動フォールバック）</option>
           <option value="equal">Equal</option>
           <option value="whole">Whole Sign</option>
         </select>
@@ -126,12 +125,8 @@ h3,h4,th{color:var(--gold)}
     <div class="card">
       <span class="ribbon">凡例</span>
       <div class="small">
-        <div class="tag">☌ Conjunction</div>
-        <div class="tag">⚹ Sextile</div>
-        <div class="tag">□ Square</div>
-        <div class="tag">△ Trine</div>
-        <div class="tag">⚻ Quincunx</div>
-        <div class="tag">☍ Opposition</div>
+        <div class="tag">☌ Conjunction</div><div class="tag">⚹ Sextile</div><div class="tag">□ Square</div>
+        <div class="tag">△ Trine</div><div class="tag">⚻ Quincunx</div><div class="tag">☍ Opposition</div>
       </div>
     </div>
   </div>
@@ -155,17 +150,16 @@ h3,h4,th{color:var(--gold)}
 <footer class="container small" style="text-align:center;margin:28px 0;color:var(--muted)">© Horoscope PRO</footer>
 
 <script>
-/* ---------- 基本 ---------- */
+/* ===== 基本 ===== */
 const DEG=Math.PI/180;
 const SIGNS=["牡羊","牡牛","双子","蟹","獅子","乙女","天秤","蠍","射手","山羊","水瓶","魚"];
 const GL=[["Sun","☉"],["Moon","☽"],["Mercury","☿"],["Venus","♀"],["Mars","♂"],["Jupiter","♃"],["Saturn","♄"],["Uranus","♅"],["Neptune","♆"],["Pluto","♇"]];
 const ASP=[["Conj",0,8,"#ffffff","☌","0°"],["Sext",60,5,"#5bd394","⚹","60°"],["Square",90,6,"#ff7b7b","□","90°"],["Trine",120,7,"#66a6ff","△","120°"],["Inc",150,4.5,"#b28cff","⚻","150°"],["Opp",180,8,"#f0c262","☍","180°"]];
 function mod360(x){x%=360; if(x<0)x+=360; return x}
 function dAng(a,b){let d=Math.abs(a-b)%360; return d>180?360-d:d}
-function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
 const toDM = lon => {lon=mod360(lon); const d=Math.floor(lon%30), m=Math.round((lon%1)*60); return [SIGNS[Math.floor(lon/30)], `${d}°${String(m).padStart(2,"0")}′`];};
 
-/* ---------- 入力パース ---------- */
+/* ===== 入力 ===== */
 function parseCompactDate(s){
   s=String(s||"").trim(); if(!s) throw "生年月日が空です（1989531 / 19890531）";
   const d=s.replace(/[^\d]/g,"");
@@ -181,7 +175,7 @@ function parseCompactTime(t){
   return {hh,mi};
 }
 
-/* ---------- 時刻→JD/恒星時 ---------- */
+/* ===== 時刻→JD/恒星時 ===== */
 function jdFromYMD(y,m,d,hh=0,mi=0,tz=0,dst=0){
   if(m<=2){y--;m+=12}
   const A=Math.floor(y/100),B=2-A+Math.floor(A/4);
@@ -191,7 +185,7 @@ function jdFromYMD(y,m,d,hh=0,mi=0,tz=0,dst=0){
 function obliqDeg(jd){const T=(jd-2451545.0)/36525;return 23+26/60+21.448/3600-(46.8150*T+0.00059*T*T-0.001813*T*T*T)/3600}
 function gstDeg(jd){const T=(jd-2451545.0)/36525;return mod360(280.46061837+360.98564736629*(jd-2451545.0)+0.000387933*T*T-(T*T*T)/38710000)}
 
-/* ---------- 天体黄経（軽量近似：高速・安定） ---------- */
+/* ===== 天体黄経（軽量近似） ===== */
 function Tcent(jd){return (jd-2451545.0)/36525}
 function sunLon(jd){const T=Tcent(jd); const L0=mod360(280.46646+36000.76983*T+0.0003032*T*T); const M=mod360(357.52911+35999.05029*T-0.0001537*T*T)*DEG; const C=(1.914602-0.004817*T-0.000014*T*T)*Math.sin(M)+(0.019993-0.000101*T)*Math.sin(2*M)+0.000289*Math.sin(3*M); return mod360(L0+C);}
 function moonLon(jd){const T=Tcent(jd), L0=mod360(218.3164477+481267.88123421*(jd-2451545)/36525); const M=mod360(134.9633964+477198.8675055*(jd-2451545)/36525)*DEG; const D=mod360(297.8501921+445267.1114034*(jd-2451545)/36525)*DEG; return mod360(L0 + 6.289*Math.sin(M) + 1.274*Math.sin(2*D - M) + 0.658*Math.sin(2*D) + 0.214*Math.sin(2*M) + 0.11*Math.sin(D));}
@@ -201,7 +195,7 @@ function planetMean(name){const n={Mercury:4.09233445,Venus:1.60213034,Mars:0.52
 }
 const LON={Sun:jd=>sunLon(jd), Moon:jd=>moonLon(jd), Mercury:planetMean("Mercury"),Venus:planetMean("Venus"),Mars:planetMean("Mars"),Jupiter:planetMean("Jupiter"),Saturn:planetMean("Saturn"),Uranus:planetMean("Uranus"),Neptune:planetMean("Neptune"),Pluto:planetMean("Pluto")};
 
-/* ---------- ASC/MC ---------- */
+/* ===== ASC/MC ===== */
 function ascMcFrom(jd,latDeg,lonDeg){
   const eps=obliqDeg(jd)*DEG, lst=gstDeg(jd)*DEG+lonDeg*DEG, phi=latDeg*DEG;
   let Lmc=Math.atan2(Math.sin(lst)*Math.cos(eps),Math.cos(lst)); Lmc=mod360(Lmc/DEG);
@@ -210,71 +204,76 @@ function ascMcFrom(jd,latDeg,lonDeg){
   return {ASC:Lasc,MC:Lmc,IC:mod360(Lmc+180),DES:mod360(Lasc+180), eps, lst, phi};
 }
 
-/* ---------- Placidus（安定版・失敗即フォールバック） ---------- */
+/* ===== Placidus（安定）＋フォールバック ===== */
 function safePlacidusCusps(A){
   try{
     const cusps = numericPlacidus(A);
-    if(!Array.isArray(cusps) || cusps.some(v=>!isFinite(v))) throw "placidus calc failed";
-    return {list:cusps, modeNote:"Placidus（高精度）"};
+    if(!Array.isArray(cusps) || cusps.length!==12 || cusps.some(v=>!isFinite(v))) throw 0;
+    return {list:cusps, note:"Placidus"};
   }catch(_){
-    // Equalへ自動フォールバック：絶対に動かす
     const eq=[...Array(12)].map((_,i)=>mod360(A.ASC+i*30));
-    return {list:eq, modeNote:"Placidus（計算困難のため Equal に安全フォールバック）"};
+    return {list:eq, note:"Equal（Placidus計算困難のため自動切替）"};
   }
 }
-
-/* 近似Placidus（半弧分割の数値解：収束を緩くして暴走防止） */
 function numericPlacidus({ASC,MC,eps,lst,phi}){
   function RAdecFromEcl(lon){lon*=DEG; const se=Math.sin(eps), ce=Math.cos(eps); const x=Math.cos(lon), y=Math.sin(lon); const ra=Math.atan2(y*ce,x); const dec=Math.asin(y*se); return {ra,dec};}
   function eclFromRA(ra,dec){const se=Math.sin(eps), ce=Math.cos(eps); const y=Math.sin(ra)*ce + Math.tan(dec)*se; const x=Math.cos(ra); return mod360(Math.atan2(y,x)/DEG);}
   function H0(dec){const t=-Math.tan(phi)*Math.tan(dec); if(t<=-1)return Math.PI; if(t>=1)return 0; return Math.acos(t);}
   function solve(targetFrac, RAMC, upper){
-    let ra=RAMC + (upper?+1:-1)*targetFrac*(Math.PI/2); // 初期
+    let ra=RAMC + (upper?+1:-1)*targetFrac*(Math.PI/2);
     for(let k=0;k<60;k++){
       const lonGuess=mod360(ra/DEG);
       const {ra:ra2,dec}=RAdecFromEcl(lonGuess);
-      const H=H0(dec);
-      const want=(upper?+1:-1)*targetFrac*H;
+      const H=H0(dec), want=(upper?+1:-1)*targetFrac*H;
       const diff=(ra - RAMC) - want;
-      ra -= diff*0.5; // 緩い収束
+      ra -= diff*0.5;
       if(Math.abs(diff)<1e-6) break;
     }
     return ra;
   }
   const cusps=new Array(12).fill(0);
   cusps[0]=ASC; cusps[9]=MC;
-  // 上半球（11,12）
   const ra11=solve(1/3, lst, true), ra12=solve(2/3, lst, true);
-  cusps[10]=eclFromRA(ra11, 0); cusps[11]=eclFromRA(ra12, 0);
-  // 下半球（2,3）: LST+π を基準
   const ra2 =solve(2/3, lst+Math.PI, false), ra3 =solve(1/3, lst+Math.PI, false);
-  cusps[1]=ASC;
-  cusps[2]=eclFromRA(ra2,0); cusps[3]=eclFromRA(ra3,0);
-  // 対向
-  cusps[4]=mod360(cusps[10]+180); // 11の対向（近似の安定策）
-  cusps[5]=mod360(cusps[11]+180);
-  cusps[6]=mod360(cusps[0]+180);
-  cusps[7]=mod360(cusps[1]+180);
-  cusps[8]=mod360(cusps[2]+180);
+  cusps[10]=eclFromRA(ra11,0); cusps[11]=eclFromRA(ra12,0);
+  cusps[1]=ASC; cusps[2]=eclFromRA(ra2,0); cusps[3]=eclFromRA(ra3,0);
+  cusps[4]=mod360(cusps[10]+180); cusps[5]=mod360(cusps[11]+180);
+  cusps[6]=mod360(cusps[0]+180);  cusps[7]=mod360(cusps[1]+180); cusps[8]=mod360(cusps[2]+180);
   return cusps.map(mod360);
 }
 
-/* Equal / Whole */
+/* ===== Equal / Whole ===== */
 const Houses={equal(asc){return[...Array(12)].map((_,i)=>mod360(asc+i*30))}, whole(asc){const s=Math.floor(asc/30);return[...Array(12)].map((_,i)=>mod360((s+i)*30))}};
 
-/* ---------- 地名→緯度経度（ネット不調でも動作続行） ---------- */
-async function geocodeNominatim(q){const url=`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`; const r=await fetch(url,{headers:{'Accept-Language':'ja'}}); if(!r.ok) throw 0; const js=await r.json(); if(!js?.[0]) throw 0; return {lat:+js[0].lat,lon:+js[0].lon,src:"nominatim"};}
-async function geocodeOpenMeteo(q){const url=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=ja&format=json`; const r=await fetch(url); if(!r.ok) throw 0; const js=await r.json(); if(!js?.results?.[0]) throw 0; const a=js.results[0]; return {lat:+a.latitude,lon:+a.longitude,src:"open-meteo"};}
+/* ===== 地名→緯度経度（誤記修正：余計な "date;" を削除） ===== */
+async function geocodeNominatim(q){
+  const url=`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`;
+  const r=await fetch(url,{headers:{'Accept-Language':'ja'}});
+  if(!r.ok) throw 0; const js=await r.json(); if(!js?.[0]) throw 0;
+  return {lat:+js[0].lat,lon:+js[0].lon,src:"nominatim"};
+}
+async function geocodeOpenMeteo(q){
+  const url=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=ja&format=json`;
+  const r=await fetch(url); if(!r.ok) throw 0; const js=await r.json(); if(!js?.results?.[0]) throw 0;
+  const a=js.results[0]; return {lat:+a.latitude,lon:+a.longitude,src:"open-meteo"};
+}
 async function geocodeSmart(q){try{return await geocodeNominatim(q)}catch(_){return await geocodeOpenMeteo(q)}}
 document.getElementById("geo").onclick=async()=>{
   const q=document.getElementById("place").value.trim();
   if(!q) return alert("地名を入れてください");
-  try{const g=await geocodeSmart(q); date; document.getElementById("lat").value=g.lat; document.getElementById("lon").value=g.lon; alert(`緯度経度：${g.lat.toFixed(4)}, ${g.lon.toFixed(4)}（${g.src}）`);}
-  catch(_){alert("見つかりませんでした（緯度経度を手入力してください）");}
+  try{
+    const g=await geocodeSmart(q);
+    document.getElementById("lat").value=g.lat;
+    document.getElementById("lon").value=g.lon;
+    alert(`緯度経度：${g.lat.toFixed(4)}, ${g.lon.toFixed(4)}（${g.src}）`);
+  }catch(_){
+    alert("見つかりませんでした（緯度経度を手入力してください）");
+  }
 }
 
-/* ---------- 描画（エメラルド×ゴールド） ---------- */
-function angFor(longitude, ASC){ return ((ASC - longitude + 180) * DEG); } // ASC左、反時計
+/* ===== 描画 ===== */
+function angFor(longitude, ASC){ return ((ASC - longitude + 180) * DEG); }
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
 function drawSignGlyph(ctx, idx, x, y, s, col=css("--gold")){
   ctx.save(); ctx.translate(x,y); ctx.strokeStyle=col; ctx.lineWidth=Math.max(2.0, s*0.06); ctx.lineCap="round"; ctx.lineJoin="round";
   const r=s*0.42;
@@ -294,55 +293,55 @@ function drawSignGlyph(ctx, idx, x, y, s, col=css("--gold")){
 }
 function drawPlanetGlyph(ctx, key, x, y, size){
   const m={Sun:"☉",Moon:"☽",Mercury:"☿",Venus:"♀",Mars:"♂",Jupiter:"♃",Saturn:"♄",Uranus:"♅",Neptune:"♆",Pluto:"♇"};
-  ctx.save(); ctx.fillStyle=css("--white"); ctx.strokeStyle=css("--gold"); ctx.lineWidth=2;
+  ctx.save(); ctx.fillStyle:"#f6f6f6"; ctx.strokeStyle:"#e4c878"; ctx.lineWidth=2;
   ctx.beginPath(); ctx.arc(x,y,size*0.52,0,Math.PI*2); ctx.stroke();
   ctx.font=`${Math.round(size*0.9)}px 'Times New Roman',serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
   ctx.fillText(m[key],x,y+1); ctx.restore();
 }
-function drawChart(canvas,pos,houses,{orb}={}){
+function drawChart(canvas,pos,h,{orb}={}){
   const ctx=canvas.getContext('2d'), W=canvas.width, H=canvas.height, cx=W/2, cy=H/2;
   ctx.clearRect(0,0,W,H);
   const labelsDiv=document.getElementById("labels"); labelsDiv.innerHTML=""; labelsDiv.style.transform=`translate(${cx}px,${cy}px)`;
   const R=Math.min(W,H)*0.46, bandR1=R-12, bandR2=R-86, houseR=bandR2-18;
 
-  // 外輪：エメラルド
+  // 外輪
   ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2);
   const grad=ctx.createLinearGradient(cx-R,cy-R,cx+R,cy+R);
-  grad.addColorStop(0,"#0c3a2f"); grad.addColorStop(0.5,"var(--emerald)"); grad.addColorStop(1,"var(--emerald2)");
+  grad.addColorStop(0,"#0c3a2f"); grad.addColorStop(0.5,"#00b894"); grad.addColorStop(1,"#66ffcc");
   ctx.strokeStyle=grad; ctx.lineWidth=22; ctx.stroke();
 
   // サイン帯
   for(let i=0;i<12;i++){
     const lon=mod360(Math.floor(pos.ASC/30)*30 + i*30);
-    const a0=angFor(lon,pos.ASC), a1=angFor(mod360(lon+30),pos.ASC);
+    const a0=((pos.ASC - lon + 180) * DEG), a1=((pos.ASC - (lon+30) + 180) * DEG);
     ctx.beginPath(); ctx.arc(cx,cy,bandR1,a0,a1,true); ctx.arc(cx,cy,bandR2,a1,a0,false); ctx.closePath();
-    ctx.fillStyle= (i%2)? "var(--band)" : "var(--band2)"; ctx.fill();
-    const mid=angFor(mod360(lon+15), pos.ASC);
+    ctx.fillStyle= (i%2)? "#10221b" : "#0f1c17"; ctx.fill();
+    const mid=((pos.ASC - (lon+15) + 180) * DEG);
     const rx=cx+(bandR1+bandR2)/2*Math.cos(mid), ry=cy+(bandR1+bandR2)/2*Math.sin(mid);
-    drawSignGlyph(ctx, Math.floor(lon/30)%12, rx, ry, 86, "var(--gold)");
+    drawSignGlyph(ctx, Math.floor(lon/30)%12, rx, ry, 86, "#e4c878");
   }
 
   // ハウス線＋5°目盛
+  const list=h.list||h;
   for(let i=0;i<12;i++){
-    const cusp=houses.list ? houses.list[i] : houses[i];
-    const a=angFor(cusp, pos.ASC), x=cx+houseR*Math.cos(a), y=cy+houseR*Math.sin(a);
-    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.lineWidth=i===0?2.6:1; ctx.strokeStyle=i===0?"var(--gold)":"var(--tick)"; ctx.stroke();
+    const cusp=list[i], a=((pos.ASC - cusp + 180) * DEG), x=cx+houseR*Math.cos(a), y=cy+houseR*Math.sin(a);
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.lineWidth=i===0?2.6:1; ctx.strokeStyle=i===0?"#e4c878":"#2f4a42"; ctx.stroke();
     for(let d=5; d<30; d+=5){
-      const aa=angFor(mod360(cusp+d),pos.ASC); const r1=houseR-6, r2=houseR-(d%10===0?22:14);
+      const aa=((pos.ASC - (cusp+d) + 180) * DEG); const r1=houseR-6, r2=houseR-(d%10===0?22:14);
       ctx.beginPath(); ctx.moveTo(cx+r1*Math.cos(aa), cy+r1*Math.sin(aa)); ctx.lineTo(cx+r2*Math.cos(aa), cy+r2*Math.sin(aa));
       ctx.lineWidth=1; ctx.strokeStyle="#2a5d4c"; ctx.stroke();
       if(d%10===0){ ctx.fillStyle="#9debcf"; ctx.font="11px ui-monospace"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(String(d), cx+(r2-10)*Math.cos(aa), cy+(r2-10)*Math.sin(aa));}
     }
-    ctx.fillStyle=i===0?css("--gold"):css("--ink"); ctx.font="bold 12px 'Times New Roman',serif";
+    ctx.fillStyle=i===0?"#e4c878":"#f6f6f6"; ctx.font="bold 12px 'Times New Roman',serif";
     ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(i+1, cx+(houseR-14)*Math.cos(a), cy+(houseR-14)*Math.sin(a));
   }
 
   // 内輪
   const innerR=houseR-100; ctx.beginPath(); ctx.arc(cx,cy,innerR,0,Math.PI*2); ctx.strokeStyle="#1f3b33"; ctx.stroke();
 
-  // 惑星位置（重なり回避）
+  // 惑星
   const keys=GL.map(x=>x[0]); const nodes=[], used=[];
-  keys.forEach(k=>{const ang=angFor(pos[k],pos.ASC); let rr=houseR-18; for(const u of used){ if(Math.abs(ang-u)<(10*DEG)) rr-=14;} used.push(ang); nodes.push([k,ang,rr]); });
+  keys.forEach(k=>{const ang=((pos.ASC - pos[k] + 180) * DEG); let rr=houseR-18; for(const u of used){ if(Math.abs(ang-u)<(10*DEG)) rr-=14;} used.push(ang); nodes.push([k,ang,rr]); });
 
   // アスペクト
   const aspects=findAspects(pos,orb);
@@ -356,7 +355,7 @@ function drawChart(canvas,pos,houses,{orb}={}){
     ctx.fillText(info[4]+" "+info[5],mx,my);
   });
 
-  // 惑星ピン＋度数ラベル（白文字・金枠）
+  // 惑星ラベル
   const labelsDiv=document.getElementById("labels");
   nodes.forEach(n=>{
     const k=n[0], ang=n[1], rr=n[2], x=cx+rr*Math.cos(ang), y=cy+rr*Math.sin(ang);
@@ -367,14 +366,14 @@ function drawChart(canvas,pos,houses,{orb}={}){
   });
 
   // 四軸
-  const asc=houses.asc??pos.ASC, mc=houses.mc??pos.MC, des=houses.des??pos.DES, ic=houses.ic??pos.IC;
+  const asc=h.asc??pos.ASC, mc=h.mc??pos.MC, des=h.des??pos.DES, ic=h.ic??pos.IC;
   [["ASC",asc,"#66ffcc"],["MC",mc,"#e4c878"],["IC",ic,"#e4c878"],["DES",des,"#66ffcc"]].forEach(([nm,lon,col])=>{
-    const a=angFor(lon,pos.ASC), x=cx+(bandR1-20)*Math.cos(a), y=cy+(bandR1-20)*Math.sin(a);
+    const a=((pos.ASC - lon + 180) * DEG), x=cx+(bandR1-20)*Math.cos(a), y=cy+(bandR1-20)*Math.sin(a);
     ctx.fillStyle=col; ctx.font="bold 42px 'Times New Roman',serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(nm, x, y);
   });
 }
 
-/* ---------- アスペクト ---------- */
+/* ===== アスペクト ===== */
 function findAspects(pos,orb){
   const out=[]; const keys=GL.map(v=>v[0]);
   for(let i=0;i<keys.length;i++){
@@ -389,27 +388,21 @@ function findAspects(pos,orb){
   return out;
 }
 
-/* ---------- 表 ----------- */
+/* ===== 表 ===== */
 function buildTables(pos,h,aspList){
-  // 天体
   const p = GL.map(([k,g])=>{const [sg,dm]=toDM(pos[k]);return `<tr><th>${g}</th><td>${sg}</td><td>${dm}</td></tr>`}).join("");
   document.getElementById("planetTbl").innerHTML=`<tr><th>天体</th><th>サイン</th><th>度分</th></tr>${p}`;
-  // ハウス
   const list=h.list||h; let tbl=`<tr><th>HOUSE</th><th>サイン</th><th>度分</th></tr>`;
   for(let i=0;i<12;i++){ const [sg,dm]=toDM(list[i]); tbl+=`<tr><th>${i+1}</th><td>${sg}</td><td>${dm}</td></tr>`}
   const add=(lab,lon)=>{const [sg,dm]=toDM(lon); tbl+=`<tr><th>${lab}</th><td>${sg}</td><td>${dm}</td></tr>`}
   add("ASC",h.asc??pos.ASC); add("MC",h.mc??pos.MC); add("DES",h.des??pos.DES); add("IC",h.ic??pos.IC);
   document.getElementById("houseTbl").innerHTML=tbl;
-
-  // 3区分・4区分
   const b3=[[],[],[]], b4=[[],[],[],[]];
   GL.forEach(([k,g])=>{const s=Math.floor(pos[k]/30); b3[s%3].push(g); b4[Math.floor(s/3)].push(g);});
   document.getElementById("t3").innerHTML=`<tr><th>活動</th><th>不動</th><th>柔軟</th></tr>
     <tr><td>${b3[0].join(" ")||"—"}</td><td>${b3[1].join(" ")||"—"}</td><td>${b3[2].join(" ")||"—"}</td></tr>`;
   document.getElementById("t4").innerHTML=`<tr><th>火</th><th>地</th><th>風</th><th>水</th></tr>
     <tr><td>${b4[0].join(" ")||"—"}</td><td>${b4[1].join(" ")||"—"}</td><td>${b4[2].join(" ")||"—"}</td><td>${b4[3].join(" ")||"—"}</td></tr>`;
-
-  // アスペクト表
   let M=`<tr><th></th>${GL.map(p=>`<th>${p[1]}</th>`).join("")}</tr>`;
   for(let i=0;i<GL.length;i++){
     M+=`<tr><th>${GL[i][1]}</th>`;
@@ -423,8 +416,6 @@ function buildTables(pos,h,aspList){
     M+=`</tr>`;
   }
   document.getElementById("aspMatrix").innerHTML=M;
-
-  // アスペクト一覧
   const groups={Conj:[],Sext:[],Square:[],Trine:[],Inc:[],Opp:[]};
   aspList.forEach(a=>groups[a.type].push(a));
   const lab=(t)=>ASP.find(x=>x[0]===t)[4]; let html="";
@@ -438,7 +429,7 @@ function buildTables(pos,h,aspList){
   document.getElementById("aspLists").innerHTML=html;
 }
 
-/* ---------- AI 総評（各3行以上） ---------- */
+/* ===== AI 総評 ===== */
 function aiReport(pos,h,name){
   const sign=(lon)=>Math.floor(mod360(lon)/30);
   const element=(s)=>["火","地","風","水"][Math.floor(s/3)];
@@ -451,7 +442,7 @@ function aiReport(pos,h,name){
   const syn=[`相性は月と金星の要素が土台。同系なら摩擦少、異系でも“リズムの約束”で長期安定。`,`衝突角は役割差の表れ。分担と期待値を言語化すると推進力に変わる。`,`共有資源（時間/お金/空間）のルールを先に決めると安心感が上がる。`];
   const move=[`引っ越しは月の要素で選ぶと適応が早い。`,`契約は木星良角期が滑らか。金星逆行期は内装・備品の見直しに充てる。`,`ASC支配星の動線を整えると生活満足度が上がる。`];
   const change=[`転職は太陽×木星（拡大）/太陽×土星（地固め）を基準に現職の熟度で選ぶ。`,`履歴書は水星の強みで設計：言語化力または成果物を前面に。`,`入社後90日の行動計画を先に提示すると期待値が揃う。`];
-  const vocation=[`適職は「太陽×10H×土星」。役割の明確化と継続運用が成果を積む。`,`副業は木星領域で伸びやすい。時間を箱で確保し週次ルーチン化。`,`仕組み（手順書/テンプレ/自動化）づくりは将来の自由度を増やす投資。`];
+  const vocation=[`適職は「太陽×10H×土星」。役割の明確化と継続運用が成果を積む。`,`副業は木星領域で伸びやすい。時間を箱で確保し週次ルーチン化。`,`仕組み（手順書/テンプレ/自動化）づくりは将来の自由度を増す投資。`];
   const strengths=[`決断と初動が速い`,`学習曲線が急`,`対人の調整力が高い`];
   const weaknesses=[`抱え込みやすい`,`完璧主義に偏りがち`,`中間共有が遅れると周囲が動きづらい`];
   return [
@@ -468,7 +459,7 @@ function aiReport(pos,h,name){
   ].join("\n\n");
 }
 
-/* ---------- 実行 ---------- */
+/* ===== 実行 ===== */
 function metaFromInputs(){
   const {y,m,d}=parseCompactDate(document.getElementById("dateCompact").value);
   const {hh,mi}=parseCompactTime(document.getElementById("timeCompact").value);
@@ -478,7 +469,11 @@ function metaFromInputs(){
   const jd=jdFromYMD(y,m,d,hh,mi,tz,dst);
   return {y,m,d,hh,mi,lat,lon,tz,dst,jd};
 }
-document.getElementById("calcAsc").onclick=()=>{try{const M=metaFromInputs(); const a=ascMcFrom(M.jd,M.lat,M.lon); alert(`ASC ${a.ASC.toFixed(2)}° / MC ${a.MC.toFixed(2)}°`);}catch(e){alert(e)}};
+
+document.getElementById("calcAsc").onclick=()=>{try{
+  const M=metaFromInputs(); const a=ascMcFrom(M.jd,M.lat,M.lon);
+  alert(`ASC ${a.ASC.toFixed(2)}° / MC ${a.MC.toFixed(2)}°`);
+}catch(e){alert(e)}};
 
 document.getElementById("run").onclick=()=>{
   try{
@@ -492,33 +487,28 @@ document.getElementById("run").onclick=()=>{
       Uranus:LON.Uranus(M.jd),Neptune:LON.Neptune(M.jd),Pluto:LON.Pluto(M.jd)
     });
 
-    // ハウス（Placidus優先→失敗時Equal自動）
+    // ハウス
     const mode=document.getElementById("house").value;
-    let cusps, note="";
-    if(mode==="placidus"){ const r=safePlacidusCusps(A); cusps=r.list; note=r.modeNote; }
-    else if(mode==="equal"){ cusps=Houses.equal(A.ASC); note="Equal"; }
-    else { cusps=Houses.whole(A.ASC); note="Whole Sign"; }
+    let H, note="";
+    if(mode==="placidus"){ const r=safePlacidusCusps(A); H={list:r.list, asc:A.ASC, mc:A.MC, des:A.DES, ic:A.IC}; note=r.note; }
+    else if(mode==="equal"){ H={list:Houses.equal(A.ASC), asc:A.ASC, mc:A.MC, des:A.DES, ic:A.IC}; note="Equal"; }
+    else { H={list:Houses.whole(A.ASC), asc:A.ASC, mc:A.MC, des:A.DES, ic:A.IC}; note="Whole Sign"; }
+    document.getElementById("modeNote").textContent = `ハウス方式：${note}`;
 
-    // 四軸付与（表用）
-    const H={list:cusps, asc:A.ASC, mc:A.MC, des:A.DES, ic:A.IC};
-
-    // 描画・表
+    // 描画・表・AI
     const orb=+document.getElementById("orb").value||6;
     drawChart(document.getElementById("cv"), pos, H, {orb});
     const aspects=findAspects(pos,orb);
     buildTables(pos,H,aspects);
-
-    // ヘッダ情報＋AI
     const nm=document.getElementById("name").value||"—";
     document.getElementById("sum_name").textContent=nm;
     document.getElementById("sum_place").textContent=document.getElementById("place").value||`${M.lat.toFixed(3)}, ${M.lon.toFixed(3)}`;
     document.getElementById("sum_date").textContent=`${M.y}-${String(M.m).padStart(2,"0")}-${String(M.d).padStart(2,"0")}  ${String(M.hh).padStart(2,"0")}:${String(M.mi).padStart(2,"0")}`;
     document.getElementById("report").value = aiReport(pos,H,nm);
-    document.getElementById("modeNote").textContent = `ハウス方式：${note}`;
   }catch(e){ alert(e); }
 };
 
-// 初期
+/* 初期 */
 document.getElementById("timeCompact").placeholder="例：1200（=12:00）";
 document.getElementById("timeCompact").value="";
 </script>
