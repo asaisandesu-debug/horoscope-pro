@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Horoscope PRO — Cool Edition (ASC=1H / 手入力 / 反時計回り / QA+)</title>
+<title>Horoscope PRO — Cool Edition (手入力高速化 / 度数表示 / 5°目盛り / 長文AI総評)</title>
 <style>
 :root{
   --bg:#0e1116; --ink:#e6eaf2; --muted:#9aa6b2; --ring:#1f2733;
@@ -11,7 +11,8 @@
   --dial:#0b0f18; --band:#0b2240; --outer:#2a3442;
   --sq:#ff5a68; --tr:#6aa8ff; --se:#35cf95; --op:#f5b04c; --cj:#ffffff; --inc:#b48bff;
 }
-*{box-sizing:border-box} body{margin:0;color:var(--ink);background:#0e1116;
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background:#0e1116;
   background:
     radial-gradient(900px 600px at 20% -10%, rgba(58,160,255,.10), transparent 60%),
     radial-gradient(1100px 700px at 80% -20%, rgba(255,101,207,.10), transparent 60%),
@@ -21,9 +22,7 @@
 header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(14,17,22,.95),rgba(14,17,22,.7));backdrop-filter:blur(8px);border-bottom:1px solid var(--ring)}
 .wrap{max-width:1280px;margin:0 auto;padding:14px}
 h1{margin:0;font-size:20px}.sub{font-size:12px;color:var(--muted)}
-.tabs{display:flex;gap:.5rem;margin-top:.5rem}.tab{padding:.45rem .8rem;border:1px solid var(--ring);border-radius:999px;background:#0f1420;font-size:13px;cursor:pointer;color:#cbd5e1}
-.tab.active{background:var(--accent);color:#0b1220;border-color:var(--accent)}
-.grid{display:grid;gap:12px}@media(min-width:1150px){.grid{grid-template-columns:430px 1fr}}
+.grid{display:grid;gap:12px}@media(min-width:1150px){.grid{grid-template-columns:420px 1fr}}
 .card{background:linear-gradient(180deg,#0f1420,#0d121b);border:1px solid var(--ring);border-radius:14px;padding:14px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 label{font-size:12px;color:var(--muted)}
@@ -32,6 +31,11 @@ input.error{border-color:#ff5a68;background:#1a0f12}
 .help{font-size:12px;color:#9aa6b2}
 .btn{cursor:pointer;background:#111827;border:1px solid var(--ring)}.btn:hover{background:#0f172a}
 .btn-ac{background:var(--accent);color:#0b1220;border-color:var(--accent)}
+fieldset{border:1px solid var(--ring);border-radius:12px;padding:10px}
+legend{font-size:12px;color:#9aa6b2;padding:0 6px}
+.flex{display:flex;gap:6px;align-items:center}
+.spin{display:grid;grid-template-columns:1fr auto auto;gap:6px}
+.spin button{width:32px;padding:6px}
 canvas{width:100%;height:auto;background:var(--dial);border:1px solid var(--ring);border-radius:12px}
 .block{background:#0f1420;border:1px solid var(--ring);border-radius:12px;padding:12px;margin-top:10px}
 .block h4{margin:0 0 8px}
@@ -39,68 +43,102 @@ canvas{width:100%;height:auto;background:var(--dial);border:1px solid var(--ring
 .matrix th,.matrix td{border:1px solid var(--ring);padding:4px;text-align:center}
 .summary{display:grid;grid-template-columns:120px 1fr;gap:8px;margin-top:10px}
 .hide{display:none}
+.badge{position:absolute;transform:translate(-50%,-50%);background:#0b1423;border:1px solid #223243;border-radius:8px;padding:2px 6px;font:12px ui-monospace;color:#eaf2fb;white-space:nowrap}
 </style>
 </head>
 <body>
 <header>
   <div class="wrap">
-    <h1>Horoscope PRO <span style="font-size:12px;color:#9aa6b2">ASC=1H固定 / 反時計回り / 手入力 / QA強化</span></h1>
-    <div class="sub">ASCは**左（9時）**、ハウスは**反時計回り**に1→12で描画。入力はすべて手打ち・高精度チェック。</div>
-    <div class="tabs">
-      <button class="tab active" data-tab="natal">ネイタル</button>
-      <button class="tab" data-tab="syn">相性（シナストリー）</button>
-    </div>
+    <h1>Horoscope PRO <span style="font-size:12px;color:#9aa6b2">手入力高速化／度数ラベル／5°目盛り／長文AI総評</span></h1>
+    <div class="sub">ASCは左（9時）・ハウスは反時計回り 1→12。ネイタル専用。</div>
   </div>
 </header>
 
-<main id="natal" class="wrap grid">
+<main class="wrap grid">
+  <!-- 左：入力 -->
   <section class="card">
-    <h3 style="margin-top:0">入力（手打ち・高精度バリデーション）</h3>
+    <h3 style="margin-top:0">入力（高速手打ち）</h3>
+
     <div class="row">
       <div><label>氏名</label><input id="name" placeholder="例：鑑定Aさん"></div>
-      <div>
-        <label>生年月日（YYYY-MM-DD）</label>
-        <input id="date_text" placeholder="2001-04-28" autocomplete="off">
-        <div class="help">西暦4桁-月2桁-日2桁（例 1998-12-03）</div>
-      </div>
-    </div>
-    <div class="row">
-      <div>
-        <label>出生時刻（HH:MM）</label>
-        <input id="time_text" placeholder="18:44" autocomplete="off">
-        <div class="help">24時間表記（例 07:05 / 23:30）</div>
-      </div>
-      <div>
-        <label>出生地（地名→緯度/経度）</label>
-        <div class="row" style="grid-template-columns:1fr auto">
+      <div><label>出生地（地名 → 緯度経度）</label>
+        <div class="flex">
           <input id="place" placeholder="例：名古屋市">
-          <button class="btn" id="geo">検索</button>
+          <button class="btn" id="geo" style="white-space:nowrap">地名検索</button>
         </div>
-        <div class="help">※地名が曖昧なら市区町村まで入れてください</div>
+        <div class="help">※ヒットしにくい場合は市区町村まで記入</div>
       </div>
     </div>
-    <div class="row">
+
+    <fieldset style="margin-top:10px">
+      <legend>生年月日・時刻（分割 + スマート貼り付け）</legend>
+      <div class="row">
+        <div class="spin">
+          <div><label>年</label><input id="y" type="number" value="1990"></div>
+          <button class="btn" data-step="#y" data-d="-1">−</button>
+          <button class="btn" data-step="#y" data-d="1">＋</button>
+        </div>
+        <div class="spin">
+          <div><label>月</label><input id="m" type="number" value="1" min="1" max="12"></div>
+          <button class="btn" data-step="#m" data-d="-1">−</button>
+          <button class="btn" data-step="#m" data-d="1">＋</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <div class="spin">
+          <div><label>日</label><input id="d" type="number" value="1" min="1" max="31"></div>
+          <button class="btn" data-step="#d" data-d="-1">−</button>
+          <button class="btn" data-step="#d" data-d="1">＋</button>
+        </div>
+        <div class="spin">
+          <div><label>時</label><input id="hh" type="number" value="12" min="0" max="23"></div>
+          <button class="btn" data-step="#hh" data-d="-1">−</button>
+          <button class="btn" data-step="#hh" data-d="1">＋</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <div class="spin">
+          <div><label>分</label><input id="mi" type="number" value="0" min="0" max="59"></div>
+          <button class="btn" data-step="#mi" data-d="-5">−5</button>
+          <button class="btn" data-step="#mi" data-d="5">＋5</button>
+        </div>
+        <div>
+          <label>スマート貼り付け</label>
+          <input id="smart" placeholder="例）1989/05/31 12:00 / 1989年5月31日12時 / 19890531 1200">
+          <div class="help">貼り付け→自動で左の5項目に展開</div>
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="row" style="margin-top:10px">
       <div><label>緯度</label><input id="lat" type="number" step="0.0001" placeholder="35.1815"></div>
       <div><label>経度</label><input id="lon" type="number" step="0.0001" placeholder="136.9066"></div>
     </div>
+
     <div class="row">
       <div><label>UTC（日本=9）</label><input id="tz" type="number" value="9" step="0.25"></div>
       <div><label>DST</label><select id="dst"><option value="0">なし</option><option value="1">+1h</option></select></div>
     </div>
+
     <div class="row">
       <div><label>ハウス</label><select id="house"><option value="whole">Whole Sign</option><option value="equal">Equal</option></select></div>
       <div><label>アスペクトOrb（度）</label><input id="orb" type="number" value="6" step="0.5"></div>
     </div>
+
     <div class="row" style="margin-top:10px">
       <button class="btn" id="calcAsc">Asc/MC 計算</button>
       <button class="btn btn-ac" id="run">鑑定を作成</button>
     </div>
-    <div class="help">※ASCは9時方向、ハウスはASC起点で**反時計回り**に 1→12 を厳密描画。根拠：ASCは9時位置、カウントは反時計回り。  [oai_citation:1‡ウィキペディア](https://en.wikipedia.org/wiki/Ascendant?utm_source=chatgpt.com)</div>
+    <div class="help">※ASCは9時、ハウスは反時計回りで 1→12。四軸ラベルは半サイズ表示。</div>
   </section>
 
+  <!-- 右：チャート -->
   <section class="card">
-    <h3 style="margin-top:0">チャート（ASC/MC/IC/DES 表示：前版の半分）</h3>
-    <canvas id="cv" width="1240" height="1240"></canvas>
+    <h3 style="margin-top:0">チャート（度数ラベル・5°目盛り）</h3>
+    <div style="position:relative">
+      <canvas id="cv" width="1240" height="1240"></canvas>
+      <div id="labels"></div>
+    </div>
 
     <div class="summary">
       <div>NAME</div><div id="sum_name">—</div>
@@ -114,44 +152,19 @@ canvas{width:100%;height:auto;background:var(--dial);border:1px solid var(--ring
     </div>
 
     <div class="block">
-      <h4>AI自動鑑定（長文・やさしめ専門）</h4>
-      <textarea id="report" style="min-height:220px" placeholder="分野ごとの本格鑑定がここに出ます…"></textarea>
-    </div>
-
-    <div class="block">
-      <h4>質問AI（高機能・専門回答）</h4>
-      <div class="row">
-        <div><input id="qaQuestion" placeholder="例：医学部は向いてる？／外科と内科なら？／建築と経営どっち？／起業の適性は？"></div>
-        <div><button class="btn btn-ac" id="qaAsk">質問に答える</button></div>
-      </div>
-      <textarea id="qaAnswer" style="min-height:200px;margin-top:8px" placeholder="ここにチャートを読んだ具体回答が出ます"></textarea>
+      <h4>AI自動鑑定（各ジャンル3行＋長所/短所）</h4>
+      <textarea id="report" style="min-height:420px" placeholder="本格鑑定がここに表示されます…"></textarea>
     </div>
   </section>
-</main>
-
-<main id="syn" class="wrap grid hide">
-  <section class="card">
-    <h3 style="margin-top:0">相性（入力は手打ちのまま／計算部は前版を維持）</h3>
-    <!-- 相性入力（略）。必要なら同様のバリデーションを適用可能 -->
-    <div class="help">相性タブの描画ロジックは前版のまま保持。必要なら同じ方式に置換します。</div>
-  </section>
-  <section class="card"><h3 style="margin-top:0">合成チャート</h3><canvas id="cv_syn" width="1240" height="1240"></canvas></section>
 </main>
 
 <footer class="wrap" style="text-align:center;color:#8b95a5;font-size:12px">© Horoscope PRO</footer>
 
 <script>
-/* ───────────────── 角度・時刻ユーティリティ ───────────────── */
+/* ====== 角度・演算（同） ====== */
 const DEG=Math.PI/180, SIGNS=["牡羊","牡牛","双子","蟹","獅子","乙女","天秤","蠍","射手","山羊","水瓶","魚"];
 const GL=[["Sun","☉"],["Moon","☽"],["Mercury","☿"],["Venus","♀"],["Mars","♂"],["Jupiter","♃"],["Saturn","♄"],["Uranus","♅"],["Neptune","♆"],["Pluto","♇"]];
-const ASP=[
- ["Conj",0,8,"#ffffff","☌","0°"],
- ["Sext",60,5,"#35cf95","⚹","60°"],
- ["Square",90,6,"#ff5a68","□","90°"],
- ["Trine",120,7,"#6aa8ff","△","120°"],
- ["Inc",150,4.5,"#b48bff","⚻","150°"],
- ["Opp",180,8,"#f5b04c","☍","180°"]
-];
+const ASP=[["Conj",0,8,"#ffffff","☌","0°"],["Sext",60,5,"#35cf95","⚹","60°"],["Square",90,6,"#ff5a68","□","90°"],["Trine",120,7,"#6aa8ff","△","120°"],["Inc",150,4.5,"#b48bff","⚻","150°"],["Opp",180,8,"#f5b04c","☍","180°"]];
 function mod360(x){x%=360; if(x<0)x+=360; return x}
 function dAng(a,b){let d=Math.abs(a-b)%360; return d>180?360-d:d}
 function jdFromYMD(y,m,d,hh=0,mi=0){if(m<=2){y--;m+=12}const A=Math.floor(y/100),B=2-A+Math.floor(A/4),day=d+(hh+mi/60)/24;return Math.floor(365.25*(y+4716))+Math.floor(30.6001*(m+1))+day+B-1524.5;}
@@ -164,10 +177,8 @@ function ascMcFrom(jd,latDeg,lonDeg){
   let Lasc=Math.atan2(-cosL, sinL*cosE - tanPhi*sinE); Lasc=mod360(Lasc/DEG);
   return {ASC:Lasc,MC:Lmc,IC:mod360(Lmc+180),DES:mod360(Lasc+180)};
 }
-/* 位置 → 画面角度（重要）：ASC=左(180°)、反時計回り */
 function angFor(longitude, ASC){ return ( (ASC - longitude + 180) * DEG ); }
-
-/* ───────────────── 簡易エフェメリス（同） ───────────────── */
+/* 簡易エフェメリス */
 function Tcent(jd){return (jd-2451545.0)/36525}
 function sunLon(jd){const T=Tcent(jd); const L0=mod360(280.46646+36000.76983*T+0.0003032*T*T); const M=mod360(357.52911+35999.05029*T-0.0001537*T*T)*DEG; const C=(1.914602-0.004817*T-0.000014*T*T)*Math.sin(M)+(0.019993-0.000101*T)*Math.sin(2*M)+0.000289*Math.sin(3*M); return mod360(L0+C);}
 function moonLon(jd){const T=Tcent(jd), L0=mod360(218.3164477+481267.88123421*(jd-2451545)/36525); const M=mod360(134.9633964+477198.8675055*(jd-2451545)/36525)*DEG; const D=mod360(297.8501921+445267.1114034*(jd-2451545)/36525)*DEG; return mod360(L0 + 6.289*Math.sin(M) + 1.274*Math.sin(2*D - M) + 0.658*Math.sin(2*D) + 0.214*Math.sin(2*M) + 0.11*Math.sin(D));}
@@ -176,15 +187,25 @@ function planetMean(name){const n={Mercury:4.09233445,Venus:1.60213034,Mars:0.52
   return jd=>mod360(L0[name]+n[name]*(jd-2451545.0));
 }
 const LON={Sun:jd=>sunLon(jd), Moon:jd=>moonLon(jd), Mercury:planetMean("Mercury"),Venus:planetMean("Venus"),Mars:planetMean("Mars"),Jupiter:planetMean("Jupiter"),Saturn:planetMean("Saturn"),Uranus:planetMean("Uranus"),Neptune:planetMean("Neptune"),Pluto:planetMean("Pluto")};
+/* ハウス */
+const Houses={ whole(asc){const s=Math.floor(asc/30);return[...Array(12)].map((_,i)=>mod360((s+i)*30))}, equal(asc){return[...Array(12)].map((_,i)=>mod360(asc+i*30))} };
 
-/* ───────────────── ハウス（ASC起点 1→12 反時計回り） ───────────────── */
-const Houses={
-  whole(asc){const s=Math.floor(asc/30);return[...Array(12)].map((_,i)=>mod360((s+i)*30))},
-  equal(asc){return[...Array(12)].map((_,i)=>mod360(asc+i*30))}
-};
+/* ====== UI：スマート貼り付け/ステッパ ====== */
+document.querySelectorAll('button[data-step]').forEach(b=>{
+  b.onclick=()=>{const el=document.querySelector(b.dataset.step); el.value=+el.value + (+b.dataset.d||0);}
+});
+document.querySelector('#smart').addEventListener('change',e=>{
+  const s=e.target.value.trim();
+  // 抽出：年4桁 月1-2 日1-2 時1-2 分1-2
+  const m = s.match(/(\d{4})\D?(\d{1,2})\D?(\d{1,2})(?:\D+(\d{1,2})\D?(\d{1,2}))?/);
+  if(!m){alert("うまく読み取れませんでした");return;}
+  const [,Y,Mo,Da,H=12,Mi=0]=m.map(x=>x?+x:0);
+  y.value=Y; m_.value=Mo; d.value=Da; hh.value=H; mi.value=Mi;
+});
+const y=document.getElementById('y'), m_=document.getElementById('m'), d=document.getElementById('d'), hh=document.getElementById('hh'), mi=document.getElementById('mi');
 
-/* ───────────────── 描画（サイン青・惑星大・四軸半分） ───────────────── */
-function drawSignGlyph(ctx, idx, x, y, s, col="#3AA0FF"){ /*（前版の図形を使用：省略できないので必要最小限だけ掲載）*/
+/* ====== 描画 ====== */
+function drawSignGlyph(ctx, idx, x, y, s, col="#3AA0FF"){
   ctx.save(); ctx.translate(x,y); ctx.strokeStyle=col; ctx.lineWidth=Math.max(2.4, s*0.08); ctx.lineCap="round"; ctx.lineJoin="round";
   const r=s*0.42;
   if(idx===0){ctx.beginPath();ctx.arc(-r*0.5,0,r*0.5,Math.PI*0.9,Math.PI*1.8);ctx.moveTo(-r*0.1,-r*0.6);ctx.quadraticCurveTo(0,-r*0.2,0,r*0.6);ctx.moveTo(r*0.1,-r*0.6);ctx.quadraticCurveTo(0,-r*0.2,0,r*0.6);ctx.stroke();}
@@ -205,46 +226,66 @@ function drawSignGlyph(ctx, idx, x, y, s, col="#3AA0FF"){ /*（前版の図形�
 function drawChart(canvas,pos,houses,{orb}={}){
   const ctx=canvas.getContext('2d'), W=canvas.width, H=canvas.height, cx=W/2, cy=H/2;
   ctx.clearRect(0,0,W,H);
+  const labelsDiv=document.getElementById('labels'); labelsDiv.innerHTML="";
+
   const R=Math.min(W,H)*0.46;
 
   // 外輪
   ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.strokeStyle="#2a3442"; ctx.lineWidth=22; ctx.stroke();
 
-  // サイン帯（ASC基準・反時計回り）
-  const bandR1=R-18, bandR2=R-92;
+  // サイン帯
+  const bandR1=R-18, bandR2=R-92, houseR=bandR2-24;
   for(let i=0;i<12;i++){
-    const lon=mod360(Math.floor(pos.ASC/30)*30 + i*30); // そのサインの中央角
+    const lon=mod360(Math.floor(pos.ASC/30)*30 + i*30);
     const a0=angFor(lon, pos.ASC), a1=angFor(mod360(lon+30), pos.ASC);
-    ctx.beginPath();
-    ctx.arc(cx,cy,bandR1,a0,a1,true); // true=反時計
-    ctx.arc(cx,cy,bandR2,a1,a0,false);
+    ctx.beginPath(); ctx.arc(cx,cy,bandR1,a0,a1,true); ctx.arc(cx,cy,bandR2,a1,a0,false);
     ctx.closePath(); ctx.fillStyle="#0b2240"; ctx.fill();
-
     const mid=angFor(mod360(lon+15), pos.ASC);
     const rx=cx+(bandR1+bandR2)/2*Math.cos(mid), ry=cy+(bandR1+bandR2)/2*Math.sin(mid);
     drawSignGlyph(ctx, Math.floor(lon/30)%12, rx, ry, 100, "#3AA0FF");
   }
 
-  // ハウス線：1→12 反時計回り
-  const rHouse=bandR2-24;
+  // ハウス線 & 5°目盛り
+  ctx.strokeStyle="#334155";
   for(let i=0;i<12;i++){
-    const a=angFor(houses[i], pos.ASC);
-    const x=cx+rHouse*Math.cos(a), y=cy+rHouse*Math.sin(a);
+    const cusp=houses[i];
+    const a=angFor(cusp, pos.ASC);
+    const x=cx+houseR*Math.cos(a), y=cy+houseR*Math.sin(a);
     ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y);
-    ctx.strokeStyle=i===0?"#3aa0ff":"#334155"; ctx.lineWidth=i===0?3:1; ctx.stroke();
-    const tx=cx+(rHouse-18)*Math.cos(a), ty=cy+(rHouse-18)*Math.sin(a);
+    ctx.lineWidth=i===0?3:1; ctx.strokeStyle=i===0?"#3aa0ff":"#334155"; ctx.stroke();
+
+    // 5° ticks (0..30)
+    for(let d=5; d<30; d+=5){
+      const aa=angFor(mod360(cusp + d), pos.ASC);
+      const r1=houseR-8, r2=houseR- (d%10===0?26:16);
+      ctx.beginPath(); ctx.moveTo(cx+r1*Math.cos(aa), cy+r1*Math.sin(aa));
+      ctx.lineTo(cx+r2*Math.cos(aa), cy+r2*Math.sin(aa));
+      ctx.lineWidth=1; ctx.strokeStyle="#3a3f4a"; ctx.stroke();
+      if(d%10===0){
+        ctx.fillStyle="#8aa0b8"; ctx.font="11px ui-monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(String(d), cx+(r2-12)*Math.cos(aa), cy+(r2-12)*Math.sin(aa));
+      }
+    }
+
+    // ハウス番号
+    const tx=cx+(houseR-18)*Math.cos(a), ty=cy+(houseR-18)*Math.sin(a);
     ctx.fillStyle=i===0?"#3aa0ff":"#94a3b8"; ctx.font="bold 12px 'Times New Roman',serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
     ctx.fillText(i+1, tx, ty);
   }
 
-  const innerR=rHouse-110; ctx.beginPath(); ctx.arc(cx,cy,innerR,0,Math.PI*2); ctx.strokeStyle="#334155"; ctx.lineWidth=1; ctx.stroke();
+  // 内輪
+  const innerR=houseR-110; ctx.beginPath(); ctx.arc(cx,cy,innerR,0,Math.PI*2); ctx.strokeStyle="#334155"; ctx.lineWidth=1; ctx.stroke();
 
-  // ノード座標
-  const nodes={}, rPl=rHouse-20;
-  const keys=Object.keys(pos);
-  keys.forEach(k=>{
+  // 惑星位置ノード（重なり回避）
+  const order=["Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"];
+  const nodes={}, used=[];
+  order.forEach((k,idx)=>{
     const a=angFor(pos[k], pos.ASC);
-    nodes[k]={ang:a, x:cx+rPl*Math.cos(a), y:cy+rPl*Math.sin(a)};
+    // 近接角なら半径を段階的にズラす
+    let r=houseR-20;
+    for(const u of used){ if(Math.abs(a-u.a)<(10*DEG)){ r-=14; } }
+    used.push({a});
+    nodes[k]={ang:a, r};
   });
 
   // アスペクト
@@ -259,21 +300,37 @@ function drawChart(canvas,pos,houses,{orb}={}){
     ctx.fillText(ASP.find(s=>s[0]===a.type)[4]+" "+ASP.find(s=>s[0]===a.type)[5],mx,my);
   });
 
-  // 惑星ピン（直径≒50px）
-  ["Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto"].forEach(k=>{
-    const p=nodes[k]; const r=25;
-    ctx.beginPath(); ctx.arc(p.x,p.y,r,0,Math.PI*2); ctx.fillStyle="#0b1423"; ctx.fill(); ctx.lineWidth=3; ctx.strokeStyle="#9fb3c8"; ctx.stroke();
+  // 惑星ピン＋度数ラベル（ラベルはDOMで重なり解消）
+  order.forEach(k=>{
+    const p=nodes[k]; const rDot=25; const x=cx+p.r*Math.cos(p.ang), y=cy+p.r*Math.sin(p.ang);
+    ctx.beginPath(); ctx.arc(x,y,rDot,0,Math.PI*2); ctx.fillStyle="#0b1423"; ctx.fill(); ctx.lineWidth=3; ctx.strokeStyle="#9fb3c8"; ctx.stroke();
     ctx.fillStyle="#eaf2fb"; ctx.font="bold 32px 'Times New Roman',serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(GL.find(g=>g[0]===k)[1], p.x, p.y);
+    ctx.fillText(GL.find(g=>g[0]===k)[1], x, y);
+
+    // 度数テキスト
+    const deg=mod360(pos[k]); const d=Math.floor(deg%30); const m=Math.floor((deg%1)*60);
+    const sign=SIGNS[Math.floor(deg/30)];
+    const div=document.createElement('div'); div.className='badge';
+    div.textContent = `${GL.find(g=>g[0]===k)[1]} ${String(d).padStart(2,'0')}°${String(m).padStart(2,'0')}′ ${sign}`;
+    // 初期位置：ピンの外側
+    let bx=x+Math.cos(p.ang)*34, by=y+Math.sin(p.ang)*34;
+    // 既存ラベルと衝突回避
+    const placed=[...labelsDiv.querySelectorAll('.badge')];
+    let tries=0; const bump=12;
+    function collide(nx,ny,el){const r=el.getBoundingClientRect(); const w=r.width,h=r.height; return Math.abs(nx-+el.dataset.x)<(w) && Math.abs(ny-+el.dataset.y)<(h);}
+    while(placed.some(el=>collide(bx,by,el)) && tries<20){ bx += Math.cos(p.ang)*bump; by += Math.sin(p.ang)*bump; tries++; }
+    div.style.left = `${bx}px`; div.style.top = `${by}px`; div.dataset.x=bx; div.dataset.y=by;
+    labelsDiv.appendChild(div);
   });
 
-  // 四軸（半サイズ：40px）
+  // 四軸（半サイズ）
   [["ASC","#3aa0ff"],["MC","#ff65cf"],["IC","#ff65cf"],["DES","#3aa0ff"]].forEach(([k,col])=>{
-    const p=nodes[k]; ctx.fillStyle=col; ctx.font="bold 40px 'Times New Roman',serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(k, p.x, p.y);
+    const a=angFor(pos[k], pos.ASC); const rr=houseR-20; const x=cx+rr*Math.cos(a), y=cy+rr*Math.sin(a);
+    ctx.fillStyle=col; ctx.font="bold 40px 'Times New Roman',serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(k, x, y);
   });
 }
 
-/* ───────────────── アスペクト/要素 ───────────────── */
+/* アスペクト/要素 */
 function findAspects(pos,orb){
   const pts=Object.keys(pos).filter(k=>!["ASC","MC","IC","DES"].includes(k));
   const out=[]; for(let i=0;i<pts.length;i++){for(let j=i+1;j<pts.length;j++){
@@ -284,105 +341,108 @@ function findAspects(pos,orb){
 function elementOf(deg){const s=Math.floor(mod360(deg)/30); return [0,4,8].includes(s)?"火":[1,5,9].includes(s)?"地":[2,6,10].includes(s)?"風":"水"}
 function modalityOf(deg){const s=Math.floor(mod360(deg)/30); return [0,3,6,9].includes(s)?"活動":[1,4,7,10].includes(s)?"不動":"柔軟"}
 
-/* ───────────────── AI長文（既存） ───────────────── */
+/* ====== 長文AI総評（各ジャンル3行＋長所/短所） ====== */
 function aiReading(meta,pos,houses){
-  const aspects=findAspects(pos,meta.orb); const sSun=Math.floor(pos.Sun/30), sMoon=Math.floor(pos.Moon/30);
+  const aspects=findAspects(pos,meta.orb);
   const elCnt={火:0,地:0,風:0,水:0}, mdCnt={活動:0,不動:0,柔軟:0};
-  ["Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn"].forEach(k=>{elCnt[elementOf(pos[k])]++; mdCnt[modalityOf(pos[k])]++;});
-  const topEl=Object.entries(elCnt).sort((a,b)=>b[1]-a[1])[0][0]; const topMd=Object.entries(mdCnt).sort((a,b)=>b[1]-a[1])[0][0];
-  const head=t=>`【${t}】\n`;
+  const majors=["Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn"];
+  majors.forEach(k=>{elCnt[elementOf(pos[k])]++; mdCnt[modalityOf(pos[k])]++;});
+  const topEl=Object.entries(elCnt).sort((a,b)=>b[1]-a[1])[0][0];
+  const topMd=Object.entries(mdCnt).sort((a,b)=>b[1]-a[1])[0][0];
+  const sunS=SIGNS[Math.floor(pos.Sun/30)], moonS=SIGNS[Math.floor(pos.Moon/30)];
+  const has=(a,b,t)=>aspects.some(x=>((x.p1===a&&x.p2===b)||(x.p1===b&&x.p2===a)) && (Array.isArray(t)?t.includes(x.type):x.type===t));
+
+  const S = (title, lines)=>`【${title}】\n`+lines.map(x=>"・"+x).join("\n")+"\n\n";
+
+  const love = [
+    `金星と火星の配置から「感受性と推進力のバランス」を重視。${has("Venus","Mars",["Trine","Sext"])?"自然体で惹き合い、進展も滑らか。":"惹かれ方と進め方のテンポ差が出やすいので、合図を言語化して誤差を埋めると良い。"}`,
+    `月のサイン（${moonS}）が示す安心のカタチを尊重すると関係は長持ち。感情の回復リズムに境界線を設けると疲れにくい。`,
+    `7ハウス/金星の要素が${topEl==="風"?"会話と距離感":"体験の共有"}を求める傾向。デートは${topEl==="地"?"質の良い安定環境":"変化/学び"}を意図的に入れると◎。`
+  ];
+
+  const work = [
+    `MCと木星・土星の関係から、${has("Sun","Saturn",["Trine","Sext","Conj"])?"継続・締切の強さが武器":"“締め切り設計”がキャリアの鍵"}。${topMd==="活動"?"短期決戦でギアを上げる":"長期の積み上げで評価が伸びる" }流儀が合う。`,
+    `水星配置は思考の運搬手段を示す。${elementOf(pos.Mercury)==="風"?"文章・対話":"図解・手を動かす"}フェーズを業務に組み込むと生産性が跳ねる。`,
+    `木星が示す「拡大の回路」は${elementOf(pos.Jupiter)}要素。成果の可視化指標を${topEl==="地"?"数値管理":"ナラティブ"}で置くとチームに伝播しやすい。`
+  ];
+
+  const future = [
+    `主調「${topEl}×${topMd}」を半年テーマに採用。${topEl==="火"?"新規の火付け":"品質/資産化"}を週単位で積むと巡航速度が安定する。`,
+    `${has("Sun","Jupiter",["Trine","Sext","Conj"])?"学習曲線が立ち上がりやすい時期。":"拡大は検証を刻むほど成功率が上がる。"}小さく試し、早く学ぶ。`,
+    `感情の守備は月×土星で確認。${has("Moon","Saturn","Trine")?"休む設計が上手く、長距離戦に強い。":"過剰責任を背負いやすいので境界線を明確に。"}`
+  ];
+
+  const syn = [
+    `相性は「主調リズム」の一致が近道。${topEl==="風"||topEl==="火"?"行動と会話のテンポ":"安心と実務のテンポ"}を合わせると摩擦が減る。`,
+    `太陽/月の相補関係が育つと関係の地盤が固まる。足りない要素は外部資源（人/ツール）で補う戦略が有効。`,
+    `衝突（□/☍）は悪ではなく「役割の差分」。役割を明文化すると力が加速する。`
+  ];
+
+  const move = [
+    `引っ越しは月の状態がカギ。${elementOf(pos.Moon)==="地"?"静かな定着環境":"刺激ある交流エリア"}が心身の回復を助ける。`,
+    `木星が良角の年は居住の拡大/更新がスムーズ。契約は金星逆行期を避けて調整すると後戻りが減る。`,
+    `ASC支配星の移動経路と通勤時間の最適化が生活満足度を底上げ。`
+  ];
+
+  const changeJob = [
+    `転職適期は「太陽×木星（拡大）」か「太陽×土星（地固め）」が目安。現状の成熟度で選び方を切り替える。`,
+    `履歴書は水星の強みを前に。${elementOf(pos.Mercury)==="風"?"言語化で魅せる":"成果物や数値で魅せる"}と刺さる。`,
+    `面談は金星の流儀で。${elementOf(pos.Venus)==="水"?"共感の深さ":"美意識や整備力"}を一本芯に据える。`
+  ];
+
+  const aptitude = [
+    `適職の軸は「${topEl}×${topMd}」。${topEl==="風"?"情報の循環":"資源の整備"}を${topMd==="活動"?"起動":"維持/最適化"}する役割で評価が伸びる。`,
+    `金星=魅せ方、火星=突破力。両者の配置から、${has("Venus","Mars",["Trine","Sext"])?"営業×企画の橋渡し":"制作×運用の二刀流"}が活きる。`,
+    `木星の領域で学ぶと跳ねる。週1の学習投資を固定費化し、強みを指数関数的に育てる。`
+  ];
+
+  const strengths = [
+    `${topEl==="地"?"継続と品質志向":"変化対応/学習速度"}`,
+    `${topMd==="活動"?"初動の速さ":"腰を据えた深掘り"}`,
+    `${has("Sun","Saturn",["Trine","Sext"])?"責任感と期限耐性":"柔軟な舵切り"}`
+  ];
+  const weaknesses = [
+    `${topEl==="火"?"短気になりやすい":"慎重すぎて機会を逃しがち"}`,
+    `${topMd==="不動"?"固着しやすい":"ブレやすい"}`,
+    `${has("Moon","Saturn",["Square","Opp"])?"感情の重さが出やすい":"緊張が続くと消耗"}`
+  ];
+
   return [
-    head("総合")+`太陽${SIGNS[sSun]}×月${SIGNS[sMoon]}。主調は「${topEl}×${topMd}」。生活設計が運を底上げ。`,
-    head("恋愛")+`金星/火星と7H支配の関係でテンポ調整。調和→自然、緊張→頻度と境界の合意。`,
-    head("仕事")+`MC×木星/土星。${topMd==="活動"?"短期集中":"継続最適化"}が伸び筋。`,
-    head("未来")+`${topEl==="風"?"言語化/発信":topEl==="地"?"品質/数値":topEl==="火"?"初動/突破":"休養/共感"}を半年テーマに。`,
-  ].join("\n\n");
+    S("恋愛", love),
+    S("仕事", work),
+    S("未来計画", future),
+    S("相性", syn),
+    S("引っ越し時期の見立て", move),
+    S("転職時期の見立て", changeJob),
+    S("適職の方向性", aptitude),
+    "【長所】\n- "+strengths.join("\n- ")+"\n\n【短所】\n- "+weaknesses.join("\n- ")
+  ].join("\n");
 }
 
-/* ───────────────── 高機能 質問AI（スコアリング強化版） ───────────────── */
-function qaAnswerFromChart(question,pos,orb){
-  const q=question.trim();
-  const aspects=findAspects(pos,orb);
-  const has=(a,b,ts)=>aspects.some(x=>((x.p1===a&&x.p2===b)||(x.p1===b&&x.p2===a)) && (Array.isArray(ts)?ts.includes(x.type):x.type===ts));
-  const score=(cond,pt)=>cond?pt:0;
-
-  // 要素・基礎傾向
-  const elMaj=["Sun","Moon","Mercury","Venus","Mars","Jupiter","Saturn"].map(k=>elementOf(pos[k]));
-  const elCount={火:0,地:0,風:0,水:0}; elMaj.forEach(e=>elCount[e]++);
-  const topEl=Object.entries(elCount).sort((a,b)=>b[1]-a[1])[0][0];
-
-  // 共通指標
-  const discipline = score(has("Sun","Saturn",["Trine","Sext","Conj"]),2)+score(has("Mercury","Saturn",["Trine","Sext"]),1);
-  const research   = score(has("Mercury","Jupiter",["Trine","Sext","Conj"]),2)+score(has("Moon","Mercury",["Trine","Sext"]),1);
-  const care       = score(topEl==="水",1)+score(has("Moon","Saturn",["Trine","Sext"]),1)+score(has("Moon","Venus",["Trine","Sext"]),1);
-  const hands      = score(has("Mars","Saturn",["Trine","Sext"]),2)+score(topEl==="地",1);
-  const design     = score(has("Venus","Mercury",["Trine","Sext","Conj"]),2)+score(topEl==="風",1);
-  const biz        = score(has("Sun","Jupiter",["Trine","Sext","Conj"])||has("Jupiter","MC",["Trine","Sext","Conj"]),2)+score(has("Mercury","Saturn",["Trine","Sext"]),1);
-
-  function wrap(title, ok, why, alt){
-    return `■ ${title}\n結論：${ok? "適性あり":"慎重に"}。\n根拠：${why}\n代替：${alt}\n`;
-  }
-
-  // テーマ判定
-  if(/医|医学|医師|看護|薬|歯|臨床|内科|外科/.test(q)){
-    const s = discipline+research+care+hands;
-    const txt = wrap("医学系",
-      s>=4,
-      `${discipline? "土星調和で持久力":"持久力は今後の設計が鍵"}／${research? "思考の体系化◎":"座学は計画的に"}／${care? "ケア感性あり":"感情疲労に注意"}／${hands? "精密手技も適性":"手先訓練を"}`,
-      "薬学/臨床検査/公衆衛生/医療データなど“理詰め×安定”領域");
-    return txt;
-  }
-  if(/建築|プロダクト|設計|UI|UX|意匠|図面|CAD/.test(q)){
-    const s = design+hands+discipline;
-    return wrap("建築・デザイン系", s>=4,
-      `${design? "美×言語の橋渡し":"審美は訓練で可"}／${hands? "構造・製作の現実解◎":"試作で補強"}／${discipline? "締切耐性あり":"段階管理を"}`,
-      "情報デザイン/インダストリアル/空間演出/施工管理");
-  }
-  if(/経営|商|会計|経済|オペ|物流|SCM|マーケ|PM/.test(q)){
-    const s=biz+discipline+research;
-    return wrap("経営・商学系", s>=4,
-      `${biz? "拡大×数値の両輪":"数値設計を強化"}／${discipline? "実務の継続力◎":"ルーティン設計"}／${research? "分析思考◎":"情報整理を"}`,
-      "事業開発/ブランド運用/データ分析/オペ最適化");
-  }
-  if(/起業|独立|フリーランス|ベンチャ/.test(q)){
-    const drive = score(topEl==="火",1)+score(has("Mars","Jupiter",["Trine","Sext"]),2);
-    const risk  = score(has("Sun","Saturn",["Square","Opp"])||has("Moon","Saturn",["Square","Opp"]),1);
-    return `■ 起業/独立\n結論：${drive>=2?"挑戦適性あり":"段階的に"}。\n根拠：推進力=${drive}／リスク=${risk}。小さく検証→実績可視化→資金調達が勝ち筋。`;
-  }
-  // デフォルト
-  return `質問テーマ：「${q}」\n主調=${topEl}。得点：規律${discipline} 研究${research} ケア${care} 手技${hands} デザイン${design} ビジネス${biz}\n→ もう少し具体語（学部名・職種名）で聞くと、より精密に割り出せます。`;
-}
-
-/* ───────────────── 入出力・検証 ───────────────── */
+/* ====== 入出力 ====== */
 function $(s){return document.querySelector(s)}
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
-  const id=t.dataset.tab; $("#natal").classList.toggle('hide', id!=='natal'); $("#syn").classList.toggle('hide', id!=='syn');
-});
 async function geocode(q){return fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,{headers:{'Accept-Language':'ja'}}).then(r=>r.json()).then(js=>js?.[0]?{lat:+js[0].lat,lon:+js[0].lon}:null).catch(_=>null)}
 $("#geo").onclick=async()=>{const q=$("#place").value.trim(); if(!q)return; const g=await geocode(q); if(!g){alert("見つかりませんでした");return} $("#lat").value=g.lat; $("#lon").value=g.lon;}
 
-/* 厳格バリデーション */
-function mark(el,ok){el.classList.toggle('error',!ok); return ok}
-function parseDateTimeStrict(ds,ts){
-  const d=/^\d{4}-\d{2}-\d{2}$/.test(ds); const t=/^\d{2}:\d{2}$/.test(ts);
-  if(!mark($("#date_text"),d)) throw "日付は YYYY-MM-DD で入力";
-  if(!mark($("#time_text"),t)) throw "時刻は HH:MM で入力";
-  const [y,m,dn]=ds.split("-").map(Number), [hh,mi]=ts.split(":").map(Number);
-  const dt=new Date(Date.UTC(y,m-1,dn,hh,mi)); if(dt.getUTCFullYear()!=y||dt.getUTCMonth()!=m-1||dt.getUTCDate()!=dn) throw "存在しない日付です";
-  if(hh>23||mi>59) throw "時刻が不正です";
-  return {y,m: m, d: dn, hh, mi};
-}
 function metaFromInputs(){
-  const {y,m,d,hh,mi}=parseDateTimeStrict($("#date_text").value.trim(), $("#time_text").value.trim());
-  return {name:$("#name").value,tz:+($("#tz").value||0),dst:+($("#dst").value||0),lat:+$("#lat").value||0,lon:+($("#lon").value||0),house:$("#house").value,orb:+($("#orb").value||6),date:`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`,time:`${String(hh).padStart(2,'0')}:${String(mi).padStart(2,'0')}`};
+  const Y=+$("#y").value, M=+$("#m").value, D=+$("#d").value, H=+$("#hh").value, MI=+$("#mi").value;
+  // 簡易検証
+  const dt=new Date(Date.UTC(Y,(M-1),D,H,MI));
+  if(dt.getUTCFullYear()!=Y||dt.getUTCMonth()!=M-1||dt.getUTCDate()!=D) throw "存在しない日付です";
+  if(H>23||MI>59) throw "時刻が不正です";
+  return {
+    name:$("#name").value, tz:+($("#tz").value||0), dst:+($("#dst").value||0),
+    lat:+$("#lat").value||0, lon:+($("#lon").value||0),
+    house:$("#house").value, orb:+($("#orb").value||6),
+    date:`${Y}-${String(M).padStart(2,'0')}-${String(D).padStart(2,'0')}`, time:`${String(H).padStart(2,'0')}:${String(MI).padStart(2,'0')}`
+  };
 }
 
 $("#calcAsc").onclick=()=>{try{
   const m=metaFromInputs(); if(isNaN(m.lat)||isNaN(m.lon)) return alert("緯度経度を入れてください");
   const [Y,M,D]=m.date.split('-').map(Number); const [H,MM]=m.time.split(':').map(Number);
   const jd=jdFromYMD(Y,M,D,H-m.tz-m.dst,MM); const am=ascMcFrom(jd,m.lat,m.lon);
-  alert(`ASC=${SIGNS[Math.floor(am.ASC/30)]} / MC=${SIGNS[Math.floor(am.MC/30)]}（ASCは9時位置、ハウスは反時計回り）`);
+  alert(`ASC=${SIGNS[Math.floor(am.ASC/30)]} / MC=${SIGNS[Math.floor(am.MC/30)]}（ASCは9時・反時計回り）`);
 }catch(e){alert(e)}}
 
 function computeAll(meta){
@@ -408,7 +468,6 @@ function buildNatal(meta){
   $("#sum_name").textContent=meta.name||"—"; $("#sum_date").textContent=`${meta.date}　${meta.time}`; $("#sum_place").textContent=$("#place").value||"—";
   buildMatrix($("#aspMatrix"),pos,meta.orb);
   $("#report").value=aiReading(meta,pos,houses);
-  $("#qaAsk").onclick=()=>{const q=$("#qaQuestion").value||""; $("#qaAnswer").value=qaAnswerFromChart(q,pos,meta.orb);}
 }
 $("#run").onclick=()=>{try{
   const m=metaFromInputs(); if(!m.lat||!m.lon) return alert("緯度・経度を入力してください");
