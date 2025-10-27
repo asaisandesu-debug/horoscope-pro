@@ -6,12 +6,15 @@
 <title>西洋占星術クイズ｜全星座×全惑星×全ハウス×全アスペクト</title>
 <style>
 :root{--bg:#0b0f14;--panel:#121822;--ink:#e9eef5;--muted:#9bb0c3;--accent:#7cc9ff;--good:#67e3a3;--bad:#ff7a7a;--btn:#1b2533;--line:#213044;--warn:#f6d36b}
-*{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}
 header{position:sticky;top:0;background:linear-gradient(180deg,#0b0f14 70%,#0b0f14cc);backdrop-filter:blur(6px);z-index:5;border-bottom:1px solid var(--line)}
 .container{max-width:1000px;margin:0 auto;padding:14px}
-h1{font-size:20px;margin:0 0 6px} small{color:var(--muted)}
+h1{font-size:20px;margin:0 0 6px}
+small{color:var(--muted)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
-.grid{display:grid;gap:10px} @media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
+.grid{display:grid;gap:10px}
+@media(min-width:760px){.grid{grid-template-columns:1fr 1fr}}
 label{display:block;margin:6px 0;color:var(--muted)}
 select,input[type=number]{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0e1520;color:var(--ink)}
 .btn{display:inline-block;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#1b2533;color:var(--ink);text-decoration:none;font-weight:600}
@@ -115,10 +118,10 @@ footer{color:var(--muted);text-align:center;padding:36px 12px}
     <h3 style="margin:0 0 8px">問題編集ガイド</h3>
     <ol>
       <li>辞書 <span class="kbd">DB</span> を編集すると、全自動で問題が再生成されます。</li>
-      <li>カテゴリは下の <span class="kbd">CATS</span>。自作カテゴリも追加可能（idとgenerator関数を追加）。</li>
+      <li>カテゴリは下の <span class="kbd">CATS</span>。自作カテゴリも追加可能（idを追加するだけ）。</li>
       <li>自己診断で辞書の欠落・矛盾を検知し、上部に警告表示します。</li>
     </ol>
-    <p class="help">注：本ツールは一般的な教科書的定義に基づく標準的キーワードで作題しています（流派差は存在します）。</p>
+    <p class="help">注：本ツールは一般的な定義に基づく標準キーワードで作題（流派差は存在）。</p>
   </section>
 </main>
 
@@ -126,14 +129,14 @@ footer{color:var(--muted);text-align:center;padding:36px 12px}
 <div id="toast"></div>
 
 <script>
-// ====== ベース辞書（一般的な教科書的定義） ======
+// ====== ベース辞書 ======
 const DB = {
   signs: [
     {id:'Ar',name:'牡羊',elem:'火',mode:'活動',ruler:'火星',modern:null,exalt:'太陽',detr:'金星',fall:'土星',kw:'速い/直感/先駆け'},
     {id:'Ta',name:'牡牛',elem:'地',mode:'不動',ruler:'金星',modern:null,exalt:'月',detr:'火星',fall:'天王星',kw:'安定/感覚/所有'},
     {id:'Ge',name:'双子',elem:'風',mode:'柔軟',ruler:'水星',modern:null,exalt:null,detr:'木星',fall:null,kw:'情報/交換/機転'},
     {id:'Ca',name:'蟹', elem:'水',mode:'活動',ruler:'月',  modern:null,exalt:'木星',detr:'土星',fall:'火星',kw:'保護/共感/家族'},
-    {id:'Le',name:'獅子',elem:'火',mode:'不動',ruler:'太陽',modern:null,exalt:'冥王星',detr:'土星',fall:'天王星',kw:'自己表現/誇り/創造'},
+    {id:'Le',name:'獅子',elem:'火',mode:'不動',ruler:'太陽',modern:null,exalt:null,detr:'土星',fall:null,kw:'自己表現/誇り/創造'},
     {id:'Vi',name:'乙女',elem:'地',mode:'柔軟',ruler:'水星',modern:null,exalt:'水星',detr:'木星',fall:'金星',kw:'整理/改善/実務'},
     {id:'Li',name:'天秤',elem:'風',mode:'活動',ruler:'金星',modern:null,exalt:'土星',detr:'火星',fall:'太陽',kw:'調和/美/対話'},
     {id:'Sc',name:'蠍', elem:'水',mode:'不動',ruler:'火星',modern:'冥王星',exalt:'海王星',detr:'金星',fall:'月',kw:'深さ/集中/再生'},
@@ -170,17 +173,15 @@ const DB = {
     {id:'Sextile',name:'セクスタイル（六分）',deg:60,sym:'⚹'},
     {id:'Qnx',  name:'クインカンクス（150°）',deg:150,sym:'⚵'}
   ],
-  // オーブ（目安：流派差あり。ここは標準的目安）
   orbs: { Conj:8, Opp:8, Square:6, Trine:6, Sextile:4, Qnx:3 }
 };
 
-// ====== カテゴリとジェネレーター ======
+// ====== カテゴリ ======
 const CATS = [
   {id:'planets_basic', name:'惑星の意味（基礎）'},
   {id:'signs_basic',   name:'サインの基礎（元素/三区分/支配星）'},
   {id:'houses_basic',  name:'ハウスの基礎'},
   {id:'aspects_basic', name:'アスペクトの基礎（名称/記号/角度）'},
-  // 自動生成：全組み合わせ
   {id:'pxs', name:'天体×サイン（全組合せ）'},
   {id:'pxh', name:'天体×ハウス（全組合せ）'},
   {id:'aspect_degree', name:'度数→アスペクト判定（オーブ込）'}
@@ -191,21 +192,20 @@ const el = s=>document.querySelector(s);
 const els = s=>document.querySelectorAll(s);
 const rand = n=>Math.floor(Math.random()*n);
 const pick = (arr,n)=>arr.slice().sort(()=>Math.random()-0.5).slice(0,n);
-const toast = m=>{const t=el('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600)};
+const toast = m=>{const t=el('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);};
 
 const LSK = { SCORE:'aqp_score', WRONG:'aqp_wrong' };
 const loadWrong = ()=>new Set(JSON.parse(localStorage.getItem(LSK.WRONG)||'[]'));
-const saveWrong = id=>{const s=loadWrong();s.add(id);localStorage.setItem(LSK.WRONG',JSON.stringify([...s]))};
+const saveWrong = id=>{ const s=loadWrong(); s.add(id); localStorage.setItem(LSK.WRONG, JSON.stringify([...s])); };
 
-// ====== 自己診断（辞書欠落・矛盾チェック） ======
+// ====== 自己診断 ======
 function selfCheck(){
-  const warn=[]; // signs
+  const warn=[];
   const signIds=new Set(DB.signs.map(s=>s.id));
   if(signIds.size!==12) warn.push('サインが12個ではありません');
   if(DB.planets.length<7) warn.push('惑星が少なすぎます（最低7）');
   const houseNos=new Set(DB.houses.map(h=>h.no));
   for(let i=1;i<=12;i++){ if(!houseNos.has(i)) warn.push(`ハウス${i}がありません`); }
-  // 品位キーの存在
   DB.signs.forEach(s=>{
     if(!('elem'in s&&'mode'in s&&'ruler'in s)) warn.push(`サイン定義欠落: ${s.name}`);
   });
@@ -213,140 +213,89 @@ function selfCheck(){
   if(warn.length){ w.style.display='block'; w.textContent='⚠ 自己診断：'+warn.join(' / '); }
   else { w.style.display='none'; }
 }
-selfCheck();
 
-// ====== 問題ジェネレーター ======
+// ====== 問題ジェネレータ ======
 function gen_planets_basic(){
   const qs=[];
   DB.planets.forEach(p=>{
     const wrong = pick(DB.planets.filter(x=>x.id!==p.id).map(x=>x.kw),3);
     const choices = [p.kw,...wrong].sort(()=>Math.random()-0.5);
-    const a = choices.indexOf(p.kw);
-    qs.push({
-      id:`pb-${p.id}`, cat:'planets_basic',
-      q:`${p.name}の基本キーワードはどれ？`,
-      choices, a,
-      exp:`${p.name}＝${p.kw}。`
-    });
+    qs.push({id:`pb-${p.id}`,cat:'planets_basic',q:`${p.name}の基本キーワードはどれ？`,choices,a:choices.indexOf(p.kw),exp:`${p.name}＝${p.kw}。`});
   });
   return qs;
 }
-
 function gen_signs_basic(){
   const qs=[];
   DB.signs.forEach(s=>{
-    // 元素
     const elems=['火','地','風','水'];
-    const wrongE = pick(elems.filter(e=>e!==s.elem),3);
-    const chE = [s.elem,...wrongE].sort(()=>Math.random()-0.5);
+    const chE = [s.elem,...pick(elems.filter(e=>e!==s.elem),3)].sort(()=>Math.random()-0.5);
     qs.push({id:`sb-elem-${s.id}`,cat:'signs_basic',q:`${s.name}の元素は？`,choices:chE,a:chE.indexOf(s.elem),exp:`${s.name}の元素＝${s.elem}。`});
-    // 三区分
     const modes=['活動','不動','柔軟'];
-    const wrongM = pick(modes.filter(m=>m!==s.mode),3);
-    const chM = [s.mode,...wrongM].sort(()=>Math.random()-0.5);
+    const chM = [s.mode,...pick(modes.filter(m=>m!==s.mode),3)].sort(()=>Math.random()-0.5);
     qs.push({id:`sb-mode-${s.id}`,cat:'signs_basic',q:`${s.name}の三区分は？`,choices:chM,a:chM.indexOf(s.mode),exp:`${s.name}は${s.mode}宮。`});
-    // 支配星（モダンがあれば「（伝統）/（モダン）」の双方を説明）
-    const rul = s.ruler + (s.modern?`（モダン：${s.modern}）`:'');
     const allR = [...new Set(DB.planets.map(p=>p.name))];
-    const wrongR = pick(allR.filter(x=>x!==s.ruler),3);
-    const chR = [s.ruler,...wrongR].sort(()=>Math.random()-0.5);
-    qs.push({id:`sb-ruler-${s.id}`,cat:'signs_basic',q:`${s.name}の支配星（伝統）は？`,choices:chR,a:chR.indexOf(s.ruler),exp:`${s.name}の支配星＝${rul}。`});
+    const chR = [s.ruler,...pick(allR.filter(x=>x!==s.ruler),3)].sort(()=>Math.random()-0.5);
+    qs.push({id:`sb-ruler-${s.id}`,cat:'signs_basic',q:`${s.name}の支配星（伝統）は？`,choices:chR,a:chR.indexOf(s.ruler),exp:`${s.name}の支配星＝${s.ruler}${s.modern?`（モダン：${s.modern}）`:''}。`});
   });
   return qs;
 }
-
 function gen_houses_basic(){
   const qs=[];
   DB.houses.forEach(h=>{
     const correct=h.kw;
-    const wrong=pick(DB.houses.filter(x=>x.no!==h.no).map(x=>x.kw),3);
-    const ch=[correct,...wrong].sort(()=>Math.random()-0.5);
+    const ch=[correct,...pick(DB.houses.filter(x=>x.no!==h.no).map(x=>x.kw),3)].sort(()=>Math.random()-0.5);
     qs.push({id:`hb-${h.no}`,cat:'houses_basic',q:`第${h.no}ハウスの主なテーマは？`,choices:ch,a:ch.indexOf(correct),exp:`第${h.no}ハウス＝${correct}。`});
   });
   return qs;
 }
-
 function gen_aspects_basic(){
   const qs=[];
-  // 名称→度数
   DB.aspects.forEach(a=>{
-    const wrong = pick(DB.aspects.filter(x=>x.id!==a.id).map(x=>x.deg+'°'),3);
-    const ch = [`${a.deg}°`,...wrong].sort(()=>Math.random()-0.5);
+    const ch=[`${a.deg}°`,...pick(DB.aspects.filter(x=>x.id!==a.id).map(x=>x.deg+'°'),3)].sort(()=>Math.random()-0.5);
     qs.push({id:`ab-deg-${a.id}`,cat:'aspects_basic',q:`${a.name}の度数は？`,choices:ch,a:ch.indexOf(`${a.deg}°`),exp:`${a.name}＝${a.deg}°。`});
   });
-  // 記号→名称
   DB.aspects.forEach(a=>{
-    const wrong = pick(DB.aspects.filter(x=>x.id!==a.id).map(x=>x.name),3);
-    const ch=[a.name,...wrong].sort(()=>Math.random()-0.5);
+    const ch=[a.name,...pick(DB.aspects.filter(x=>x.id!==a.id).map(x=>x.name),3)].sort(()=>Math.random()-0.5);
     qs.push({id:`ab-sym-${a.id}`,cat:'aspects_basic',q:`この記号「${a.sym}」は何？`,choices:ch,a:ch.indexOf(a.name),exp:`${a.sym}＝${a.name}。`});
   });
   return qs;
 }
-
-// 天体×サイン（全12×全惑星）
 function gen_pxs(){
   const qs=[];
   DB.planets.forEach(p=>{
     DB.signs.forEach(s=>{
-      const stem = `${p.name}が${s.name}にある時、最も近い傾向は？`;
-      // 正答＝惑星キーワード×サインKW（平易に合成）
       const correct = `${p.kw}を${s.kw.replace(/\//g,'・')}のノリで表す`;
-      // 誘導肢：他元素サインのKWなど
-      const wrong = pick(DB.signs.filter(x=>x.id!==s.id).map(x=>`${p.kw}を${x.kw.replace(/\//g,'・')}で表す`),3);
-      const ch=[correct,...wrong].sort(()=>Math.random()-0.5);
-      qs.push({id:`pxs-${p.id}-${s.id}`,cat:'pxs',q:stem,choices:ch,a:ch.indexOf(correct),
-        exp:`${p.name}（${p.kw}）×${s.name}（${s.kw}）＝「${p.kw}を${s.kw}で表現」。`});
+      const ch=[correct,...pick(DB.signs.filter(x=>x.id!==s.id).map(x=>`${p.kw}を${x.kw.replace(/\//g,'・')}で表す`),3)].sort(()=>Math.random()-0.5);
+      qs.push({id:`pxs-${p.id}-${s.id}`,cat:'pxs',q:`${p.name}が${s.name}にある時、最も近い傾向は？`,choices:ch,a:ch.indexOf(correct),exp:`${p.name}（${p.kw}）×${s.name}（${s.kw}）＝「${p.kw}を${s.kw}で表現」。`});
     });
   });
   return qs;
 }
-
-// 天体×ハウス（全12×全惑星）
 function gen_pxh(){
   const qs=[];
   DB.planets.forEach(p=>{
     DB.houses.forEach(h=>{
-      const stem = `${p.name}が第${h.no}ハウスにある時の要点は？`;
       const correct = `${p.kw}が「${h.kw}」の領域で表れやすい`;
-      const wrong = pick(DB.houses.filter(x=>x.no!==h.no).map(x=>`${p.kw}が「${x.kw}」で表れる`),3);
-      const ch=[correct,...wrong].sort(()=>Math.random()-0.5);
-      qs.push({id:`pxh-${p.id}-${h.no}`,cat:'pxh',q:stem,choices:ch,a:ch.indexOf(correct),
-        exp:`${p.name}（${p.kw}）＠第${h.no}＝${h.kw}で発現。`});
+      const ch=[correct,...pick(DB.houses.filter(x=>x.no!==h.no).map(x=>`${p.kw}が「${x.kw}」で表れる`),3)].sort(()=>Math.random()-0.5);
+      qs.push({id:`pxh-${p.id}-${h.no}`,cat:'pxh',q:`${p.name}が第${h.no}ハウスにある時の要点は？`,choices:ch,a:ch.indexOf(correct),exp:`${p.name}（${p.kw}）＠第${h.no}＝${h.kw}で発現。`});
     });
   });
   return qs;
 }
-
-// 度数→アスペクト判定（オーブ込み）
-function nearestAspect(d){
-  // dは0-180の差に正規化
-  const deg = Math.min(d,360-d);
-  let best=null, bestDiff=1e9, bestId=null;
-  DB.aspects.forEach(a=>{
-    const diff=Math.abs(deg-a.deg);
-    const orb=DB.orbs[a.id]||0;
-    if(diff<=orb && diff<bestDiff){ bestDiff=diff; best=a; bestId=a.id; }
-  });
-  return best; // or null
-}
 function gen_aspect_degree(){
   const qs=[];
-  for(let i=0;i<120;i++){ // バリエーション十分
+  for(let i=0;i<120;i++){
     const a = DB.aspects[rand(DB.aspects.length)];
     const orb = DB.orbs[a.id];
-    // オーブ内のランダム度数を作成
     const deg = Math.max(0, a.deg + (rand(orb*2+1)-orb));
-    const stem = `2天体の度数差が約${deg}°の時、最も近いアスペクトは？（目安オーブ内）`;
     const correct = a.name;
-    const wrong = pick(DB.aspects.filter(x=>x.id!==a.id).map(x=>x.name),3);
-    const ch = [correct,...wrong].sort(()=>Math.random()-0.5);
-    qs.push({id:`ad-${a.id}-${i}`,cat:'aspect_degree',q:stem,choices:ch,a:ch.indexOf(correct),
-      exp:`約${deg}°は「${a.name}（${a.deg}°）」のオーブ内。`});
+    const ch=[correct,...pick(DB.aspects.filter(x=>x.id!==a.id).map(x=>x.name),3)].sort(()=>Math.random()-0.5);
+    qs.push({id:`ad-${a.id}-${i}`,cat:'aspect_degree',q:`2天体の差が約${deg}°の時、近いアスペクトは？（目安オーブ内）`,choices:ch,a:ch.indexOf(correct),exp:`約${deg}°は「${a.name}（${a.deg}°）」のオーブ内。`});
   }
   return qs;
 }
 
-// ====== 問題プールの構築 ======
+// ====== 問題プール構築 ======
 function buildAllQuestions(){
   return [
     ...gen_planets_basic(),
@@ -360,7 +309,7 @@ function buildAllQuestions(){
 }
 let ALL = buildAllQuestions();
 
-// ====== UI 構築 ======
+// ====== UI構築 ======
 function buildCats(){
   const box = el('#catBox'); box.innerHTML='';
   CATS.forEach(c=>{
@@ -370,12 +319,10 @@ function buildCats(){
     box.appendChild(label);
   });
   el('#saved').textContent = Number(localStorage.getItem(LSK.SCORE)||0);
-  // 概算の生成可能量（カテゴリ全ON時）
   el('#capacity').textContent = ALL.length;
 }
-buildCats();
 
-// ====== 出題ロジック ======
+// ====== 出題制御 ======
 let pool=[], idx=0, score=0, reviewMode=false, history=[];
 function pickByCats(ids, n, onlyWrong=false){
   let list = ALL.filter(q=>ids.includes(q.cat));
@@ -383,10 +330,8 @@ function pickByCats(ids, n, onlyWrong=false){
     const wrong = loadWrong();
     list = list.filter(q=>wrong.has(q.id));
   }
-  // シャッフルして上位n
   return list.sort(()=>Math.random()-0.5).slice(0, Math.min(n, list.length));
 }
-
 function show(i){
   const q = pool[i];
   el('#tagCat').textContent = CATS.find(c=>c.id===q.cat)?.name || q.cat;
@@ -402,8 +347,7 @@ function show(i){
       else{
         div.classList.add('wrong');
         [...box.children][q.a].classList.add('correct');
-        const wrongSet = new Set(JSON.parse(localStorage.getItem(LSK.WRONG)||'[]')); wrongSet.add(q.id);
-        localStorage.setItem(LSK.WRONG, JSON.stringify([...wrongSet]));
+        saveWrong(q.id);
       }
       el('#explain').style.display='block'; el('#explain').textContent=q.exp;
       history[i].chosen=ci; history[i].correct=(ci===q.a);
@@ -414,7 +358,6 @@ function show(i){
   el('#explain').style.display='none';
   el('#bar').style.width = `${(i/pool.length)*100}%`;
 }
-
 function start(onlyWrong=false){
   const ids = [...els('#catBox input[type=checkbox]')].filter(x=>x.checked).map(x=>x.dataset.id);
   const n = Number(el('#count').value||20);
@@ -425,7 +368,9 @@ function start(onlyWrong=false){
 }
 function finish(){
   el('#quizArea').style.display='none'; el('#resultArea').style.display='block';
-  const saved=Number(localStorage.getItem(LSK.SCORE)||0); localStorage.setItem(LSK.SCORE',String(saved+1)); el('#saved').textContent=saved+1;
+  const saved=Number(localStorage.getItem(LSK.SCORE)||0);
+  localStorage.setItem(LSK.SCORE, String(saved+1));
+  el('#saved').textContent=saved+1;
   el('#resultText').textContent=`正解 ${score}/${pool.length}（${Math.round(score*100/pool.length)}%）｜モード：${reviewMode?'復習':'通常'}`;
   const box=el('#reviewList'); box.innerHTML='';
   pool.forEach((q,i)=>{
@@ -444,10 +389,14 @@ el('#toTop').onclick=()=>{ el('#quizArea').style.display='none'; el('#resultArea
 el('#btnGuide').onclick=()=>{ const g=el('#guide'); g.style.display=(g.style.display==='none'?'block':'none'); };
 el('#prev').onclick=()=>{ if(idx>0){ idx--; show(idx); } };
 el('#next').onclick=()=>{ if(idx<pool.length-1){ idx++; show(idx); } else{ finish(); } };
-el('#flag').onclick=()=>{ const id=pool[idx].id; const s=loadWrong(); s.add(id); localStorage.setItem(LSK.WRONG,JSON.stringify([...s])); toast('この問題を間違い帳に保存しました'); };
+el('#flag').onclick=()=>{ const id=pool[idx].id; saveWrong(id); toast('この問題を間違い帳に保存しました'); };
 
-// ====== 起動時容量表示 ======
-(function(){ el('#capacity').textContent = ALL.length; })();
+// ====== 起動処理 ======
+(function init(){
+  selfCheck();
+  buildCats();
+  el('#capacity').textContent = ALL.length;
+})();
 </script>
 </body>
 </html>
